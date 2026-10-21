@@ -14,7 +14,7 @@
   <img src="https://img.shields.io/badge/platforms-web%20%C2%B7%20iOS%20%C2%B7%20Android-145C4B?style=flat-square" alt="Platforms" />
   <img src="https://img.shields.io/badge/RTL-Arabic%20first-C4A66A?style=flat-square" alt="Arabic first" />
   <img src="https://img.shields.io/badge/tests-Jest%2049%20%C2%B7%20SQL%2086%20%C2%B7%20E2E%20114-0E2A25?style=flat-square" alt="Tests" />
-  <img src="https://img.shields.io/github/last-commit/mahmoud-teir/baseerah?style=flat-square&color=145C4B" alt="Last commit" />
+  <img src="https://img.shields.io/github/last-commit/mahmoud-teir/Baseera?style=flat-square&color=145C4B" alt="Last commit" />
 </p>
 
 <a href="docs/COVERAGE.md"><img src="https://img.shields.io/badge/📋%20Coverage%20report-FAF8F2?style=for-the-badge" alt="Coverage report" /></a>

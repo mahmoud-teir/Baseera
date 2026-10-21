@@ -1,0 +1,88 @@
+{
+  "buildCommand": "npx expo export --platform web",
+  "outputDirectory": "dist",
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/book/:id",
+      "destination": "/book/[id].html"
+    },
+    {
+      "source": "/player/:id",
+      "destination": "/player/[id].html"
+    },
+    {
+      "source": "/verify/:code",
+      "destination": "/verify/[code].html"
+    },
+    {
+      "source": "/academy/lesson/:code",
+      "destination": "/academy/lesson/[code].html"
+    },
+    {
+      "source": "/lesson/:code/quiz",
+      "destination": "/lesson/[code]/quiz.html"
+    },
+    {
+      "source": "/lesson/:code/result",
+      "destination": "/lesson/[code]/result.html"
+    },
+    {
+      "source": "/lesson/:code/answers",
+      "destination": "/lesson/[code]/answers.html"
+    },
+    {
+      "source": "/khushu/:code",
+      "destination": "/khushu/[code].html"
+    }
+  ],
+  "headers": [
+    {
+      "source": "/_expo/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/assets/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, max-age=31536000, immutable"
+        }
+      ]
+    },
+    {
+      "source": "/(.*)",
+      "headers": [
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "Permissions-Policy",
+          "value": "geolocation=(self), accelerometer=(self), gyroscope=(self), magnetometer=(self), camera=(), microphone=()"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "frame-ancestors 'none'; object-src 'none'; base-uri 'self'"
+        },
+        {
+          "key": "Strict-Transport-Security",
+          "value": "max-age=63072000; includeSubDomains"
+        }
+      ]
+    }
+  ]
+}

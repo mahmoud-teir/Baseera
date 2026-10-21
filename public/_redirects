@@ -1,0 +1,10 @@
+# Netlify / Cloudflare Pages: serve the pre-rendered template for runtime-only dynamic routes.
+/book/*      /book/[id].html      200
+/player/*    /player/[id].html    200
+/verify/*    /verify/[code].html  200
+# Lesson codes added after the planned outline (AQ-09, …) — pre-rendered codes are served directly.
+/academy/lesson/*    /academy/lesson/[code].html  200
+/lesson/*/quiz       /lesson/[code]/quiz.html            200
+/lesson/*/result     /lesson/[code]/result.html          200
+/lesson/*/answers    /lesson/[code]/answers.html         200
+/khushu/*            /khushu/[code].html                 200

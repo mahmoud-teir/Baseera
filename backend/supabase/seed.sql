@@ -1,0 +1,2 @@
+-- Intentionally empty: Baseerah ships no sample content. Lessons and every other content slot are
+-- created in the console (/admin) and published after scholar approval.

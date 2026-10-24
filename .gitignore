@@ -58,6 +58,8 @@ design-source/extracted-dashboard/
 # Builds & Binaries
 *.apk
 *.aab
+*.ipa
+*.tar.gz
 
 # Temp root screenshots
 /*.png

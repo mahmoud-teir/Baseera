@@ -15,7 +15,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'بصيرة',
   slug: 'baseerah',
-  version: '1.1.0',
+  version: '1.2.0',
   orientation: 'default',
   icon: './assets/images/icon.png',
   scheme: 'baseerah',

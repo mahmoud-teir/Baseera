@@ -32,6 +32,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     package: `app.baseerah${ID_SUFFIX}`,
+    versionCode: 4,
     adaptiveIcon: {
       backgroundColor: '#145C4B',
       foregroundImage: './assets/images/android-icon-foreground.png',
@@ -113,6 +114,5 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   extra: {
     variant: VARIANT,
-    eas: { projectId: process.env.EAS_PROJECT_ID ?? 'ba9927be-8cb4-48f9-9af4-5e6fc2c0e05f' },
   },
 });

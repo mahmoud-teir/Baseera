@@ -39,6 +39,7 @@ export const useAppUpdater = create<UpdaterState>((set, get) => ({
   error: null,
 
   checkUpdate: async (silent = true) => {
+    if (get().isChecking || get().isDownloading) return get().updateAvailable;
     set({ isChecking: true, error: null });
     try {
       const data = await checkRemoteUpdate();
@@ -55,6 +56,7 @@ export const useAppUpdater = create<UpdaterState>((set, get) => ({
           isChecking: false,
           updateAvailable: false,
           updateData: null,
+          modalVisible: false,
         });
         if (!silent) {
           useUi.getState().flash('أنت تستخدم أحدث إصدار من بصيرة ✓');

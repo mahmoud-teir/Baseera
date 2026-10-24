@@ -1,0 +1,129 @@
+name: Signed Android APKs
+
+on:
+  push:
+    branches: [main]
+    paths: [app-version.json]
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish a GitHub Release and make it available to the in-app updater
+        type: boolean
+        default: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: android-release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    env:
+      CI: '1'
+      APP_VARIANT: production
+      EXPO_NO_TELEMETRY: '1'
+      EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL }}
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ vars.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+      EXPO_PUBLIC_SITE_URL: ${{ vars.EXPO_PUBLIC_SITE_URL }}
+      EXPO_PUBLIC_UPDATE_MANIFEST_URL: https://github.com/${{ github.repository }}/releases/latest/download/update.json
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate publication branch
+        if: github.event_name == 'push' || inputs.publish
+        run: test "$GITHUB_REF" = refs/heads/main
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: android-actions/setup-android@v3
+        with:
+          # The action default includes the obsolete SDK package "tools".
+          packages: platform-tools
+      - uses: gradle/actions/setup-gradle@v4
+      - run: npm ci
+      - run: node tools/release-metadata.mjs
+      - run: node --test tools/tests/*.test.cjs
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test -- --runInBand
+      - run: npm run test:backend
+      - name: Generate Android project
+        run: npx expo prebuild --platform android --no-install
+      - name: Decode release keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          set -euo pipefail
+          for name in KEYSTORE_BASE64 KEY_ALIAS STORE_PASSWORD KEY_PASSWORD; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing signing secret: $name (see docs/ANDROID_RELEASES.md)"
+              exit 1
+            fi
+          done
+          umask 077
+          printf '%s' "$KEYSTORE_BASE64" | base64 --decode > "$RUNNER_TEMP/baseerah-release.jks"
+      - name: Build signed universal and per-architecture APKs
+        working-directory: android
+        env:
+          BASEERAH_REQUIRE_RELEASE_SIGNING: 'true'
+          ORG_GRADLE_PROJECT_BASEERAH_UPLOAD_STORE_FILE: ${{ runner.temp }}/baseerah-release.jks
+          ORG_GRADLE_PROJECT_BASEERAH_UPLOAD_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          ORG_GRADLE_PROJECT_BASEERAH_UPLOAD_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          ORG_GRADLE_PROJECT_BASEERAH_UPLOAD_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew :app:assembleRelease --no-daemon --max-workers=2 -PbaseerahApkSplits=true -PreactNativeArchitectures=armeabi-v7a,arm64-v8a,x86,x86_64
+      - name: Package APKs and update manifest
+        run: node tools/release-metadata.mjs --package
+      - name: Verify every APK uses the release certificate
+        env:
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+        run: |
+          set -euo pipefail
+          apksigner=$(find "$ANDROID_HOME/build-tools" -name apksigner -type f | sort -V | tail -1)
+          test -n "$apksigner"
+          keytool -exportcert -keystore "$RUNNER_TEMP/baseerah-release.jks" -storepass:env STORE_PASSWORD -alias "$KEY_ALIAS" -file "$RUNNER_TEMP/release-cert.der"
+          expected=$(sha256sum "$RUNNER_TEMP/release-cert.der" | cut -d ' ' -f1)
+          for apk in release-assets/*.apk; do
+            "$apksigner" verify --verbose --print-certs "$apk" > "$RUNNER_TEMP/apk-signature.txt"
+            grep -Fqi "Signer #1 certificate SHA-256 digest: $expected" "$RUNNER_TEMP/apk-signature.txt"
+          done
+      - uses: actions/upload-artifact@v4
+        with:
+          name: signed-apks-${{ github.sha }}
+          path: release-assets/
+          if-no-files-found: error
+      - name: Remove private signing material
+        if: always()
+        run: rm -f "$RUNNER_TEMP/baseerah-release.jks" "$RUNNER_TEMP/release-cert.der"
+
+  publish:
+    needs: build
+    if: github.event_name == 'push' || inputs.publish
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: signed-apks-${{ github.sha }}
+          path: release-assets
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+      - name: Publish complete release after all APKs pass verification
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node tools/publish-android-release.mjs

@@ -1,4 +1,5 @@
 import type { ConfigContext, ExpoConfig } from 'expo/config';
+import appVersion from './app-version.json';
 
 /**
  * Baseerah app config — shared by web, iOS and Android.
@@ -15,7 +16,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'بصيرة',
   slug: 'baseerah',
-  version: '1.1.0',
+  version: appVersion.version,
   orientation: 'default',
   icon: './assets/images/icon.png',
   scheme: 'baseerah',
@@ -31,6 +32,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     },
   },
   android: {
+    versionCode: appVersion.androidVersionCode,
     package: `app.baseerah${ID_SUFFIX}`,
     adaptiveIcon: {
       backgroundColor: '#145C4B',
@@ -44,6 +46,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'android.permission.ACCESS_FINE_LOCATION',
       'android.permission.POST_NOTIFICATIONS',
       'android.permission.SCHEDULE_EXACT_ALARM',
+      'android.permission.REQUEST_INSTALL_PACKAGES',
     ],
     blockedPermissions: ['android.permission.RECORD_AUDIO'],
   },
@@ -60,6 +63,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-router',
     './plugins/withShortCmakeObjectPaths',
     './plugins/withReleaseSigning',
+    './plugins/withApkSplits',
     './plugins/withExtraProguardRules',
     ['expo-localization', { supportsRTL: true, forcesRTL: true }],
     [

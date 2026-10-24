@@ -1,0 +1,42 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      CI: '1'
+      EXPO_NO_TELEMETRY: '1'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+      - run: npm ci
+      - run: node tools/release-metadata.mjs
+      - run: node --test tools/tests/*.test.cjs
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm test -- --runInBand
+      - run: npm run test:backend
+      - name: Build web
+        run: npm run export:web -- --max-workers 2
+      - name: Validate Android prebuild and plugins
+        run: |
+          npx expo prebuild --platform android --no-install
+          grep -q 'baseerah: APK architecture splits' android/app/build.gradle
+          grep -q 'REQUEST_INSTALL_PACKAGES' android/app/src/main/AndroidManifest.xml

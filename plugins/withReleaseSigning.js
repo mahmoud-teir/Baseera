@@ -8,7 +8,7 @@
  *   BASEERAH_UPLOAD_STORE_PASSWORD=…
  *   BASEERAH_UPLOAD_KEY_PASSWORD=…
  *
- * Without those properties (CI, other machines) release builds keep the debug key, as before.
+ * Set BASEERAH_REQUIRE_RELEASE_SIGNING=true in release CI to forbid debug-key fallback.
  * EAS Build manages its own credentials and is unaffected.
  */
 const { withAppBuildGradle } = require('expo/config-plugins');
@@ -35,6 +35,20 @@ function applyReleaseSigning(contents) {
     /(release\s*\{[^{}]*?\/\/ see https:\/\/reactnative\.dev\/docs\/signed-apk-android\.\s*)signingConfig signingConfigs\.debug/,
     `$1signingConfig project.hasProperty('${MARKER}') ? signingConfigs.release : signingConfigs.debug`,
   );
+  if (!s.includes("signingConfig project.hasProperty('BASEERAH_UPLOAD_STORE_FILE')")) {
+    throw new Error('Android signing template changed: release signing was not configured');
+  }
+  s += `
+// Fail closed in release CI; EAS continues to manage its own credentials.
+if (System.getenv('BASEERAH_REQUIRE_RELEASE_SIGNING') == 'true') {
+    ['BASEERAH_UPLOAD_STORE_FILE', 'BASEERAH_UPLOAD_STORE_PASSWORD',
+     'BASEERAH_UPLOAD_KEY_ALIAS', 'BASEERAH_UPLOAD_KEY_PASSWORD'].each { key ->
+        if (!project.hasProperty(key) || !project.property(key).toString().trim()) {
+            throw new GradleException("Missing required release signing property: " + key)
+        }
+    }
+}
+`;
   return s;
 }
 

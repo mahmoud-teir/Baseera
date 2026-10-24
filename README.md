@@ -333,6 +333,8 @@ On mobile devices, it automatically renders a bespoke **Native Mobile Admin Cons
 
 ## 📦 Production builds and deployment
 
+For GitHub Actions CI, signed universal/per-architecture APKs, and automatic in-app update discovery, see [Android releases](docs/ANDROID_RELEASES.md). The Actions release version is controlled by `app-version.json`.
+
 Run these once:
 
 ```bash

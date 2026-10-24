@@ -54,6 +54,7 @@ design-source/extracted/
 .claude/settings.local.json
 design-source/extracted-dashboard/
 *.keystore
+/release-assets/
 
 # Builds & Binaries
 *.apk

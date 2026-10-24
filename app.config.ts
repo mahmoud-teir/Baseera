@@ -10,11 +10,11 @@ import appVersion from './app-version.json';
 const VARIANT = (process.env.APP_VARIANT ?? 'production') as 'development' | 'staging' | 'production';
 
 const ID_SUFFIX = VARIANT === 'production' ? '' : `.${VARIANT === 'development' ? 'dev' : 'staging'}`;
-const NAME_SUFFIX = VARIANT === 'production' ? '' : VARIANT === 'development' ? ' (تطوير)' : ' (تجريبي)';
+const NAME_SUFFIX = '';
 
 export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
-  name: `بصيرة${NAME_SUFFIX}`,
+  name: 'بصيرة',
   slug: 'baseerah',
   version: appVersion.version,
   orientation: 'default',

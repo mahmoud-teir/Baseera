@@ -212,17 +212,20 @@ The APK is written to `android/app/build/outputs/apk/release/app-release.apk`. S
 
 ### 5. Run on iOS
 
-On a Mac with Xcode:
-
-```bash
-npx expo run:ios
-```
-
-Without a Mac, build a simulator app in the cloud:
-
-```bash
-npx eas-cli@latest build -p ios --profile simulator
-```
+- **Without a Mac (Sideloadly / AltStore via GitHub Actions):**
+  A free GitHub Action workflow is included in `.github/workflows/build-ios.yml` that compiles an iOS `.ipa` on cloud Apple Silicon Macs. See the full step-by-step guide in [docs/IOS_INSTALLATION.md](docs/IOS_INSTALLATION.md).
+- **On a Mac with Xcode:**
+  ```bash
+  npx expo run:ios
+  ```
+- **Simulator build in the cloud via EAS:**
+  ```bash
+  npx eas-cli@latest build -p ios --profile simulator
+  ```
+- **Physical device TestFlight via EAS:**
+  ```bash
+  npx eas-cli@latest build -p ios --profile production
+  ```
 
 ---
 

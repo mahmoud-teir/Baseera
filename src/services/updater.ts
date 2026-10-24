@@ -5,9 +5,9 @@
  */
 import * as Application from 'expo-application';
 import { File, Paths } from 'expo-file-system';
+import { getContentUriAsync } from 'expo-file-system/legacy';
 import * as IntentLauncher from 'expo-intent-launcher';
 import * as Linking from 'expo-linking';
-import * as Sharing from 'expo-sharing';
 import { Platform } from 'react-native';
 
 import { supabase } from '@/services/supabase';
@@ -202,12 +202,35 @@ export async function downloadAndInstallApk(
       return { success: false, error: 'فشل تنزيل ملف التحديث.' };
     }
 
-    // 1. Primary: Native File.preview (Expo FileSystem modern API)
-    // On Android this starts Intent.ACTION_VIEW, sets MIME type, and explicitly grants URI read permissions
-    // directly to Android PackageInstaller.
+    // 1. Convert downloaded file URI to Android FileProvider content:// URI
+    // Modern Android requires a content:// URI with FLAG_GRANT_READ_URI_PERMISSION
+    // so the system PackageInstaller can read the APK file from app's private cache.
+    let contentUri: string;
     try {
-      if (typeof downloadedFile.preview === 'function') {
-        await downloadedFile.preview({
+      contentUri = await getContentUriAsync(downloadedFile.uri);
+    } catch (uriErr) {
+      console.warn('[Updater] getContentUriAsync failed, using raw uri:', uriErr);
+      contentUri = downloadedFile.uri;
+    }
+
+    // 2. Primary: Start Android Package Installer intent directly
+    // FLAG_GRANT_READ_URI_PERMISSION (1) | FLAG_ACTIVITY_NEW_TASK (0x10000000) = 268435457
+    try {
+      await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
+        data: contentUri,
+        flags: 268435457,
+        type: 'application/vnd.android.package-archive',
+      });
+      return { success: true };
+    } catch (intentErr) {
+      console.warn('[Updater] IntentLauncher failed:', intentErr);
+    }
+
+    // 3. Secondary: Try File.preview if available
+    try {
+      const canPreview = await File.canPreview(destination);
+      if (canPreview) {
+        await File.preview(destination, {
           mimeType: 'application/vnd.android.package-archive',
         });
         return { success: true };
@@ -216,33 +239,7 @@ export async function downloadAndInstallApk(
       console.warn('[Updater] File.preview failed:', previewErr);
     }
 
-    // 2. Secondary fallback: expo-sharing which also grants URI permissions to package installer/system
-    try {
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(downloadedFile.uri, {
-          mimeType: 'application/vnd.android.package-archive',
-          dialogTitle: 'تثبيت تحديث تطبيق بصيرة',
-        });
-        return { success: true };
-      }
-    } catch (shareErr) {
-      console.warn('[Updater] Sharing fallback failed:', shareErr);
-    }
-
-    // 3. Fallback: IntentLauncher using modern contentUri property
-    try {
-      const contentUri = downloadedFile.contentUri || downloadedFile.uri;
-      await IntentLauncher.startActivityAsync('android.intent.action.VIEW', {
-        data: contentUri,
-        flags: 268435457, // FLAG_GRANT_READ_URI_PERMISSION (1) | FLAG_ACTIVITY_NEW_TASK (0x10000000)
-        type: 'application/vnd.android.package-archive',
-      });
-      return { success: true };
-    } catch (intentErr) {
-      console.warn('[Updater] IntentLauncher failed:', intentErr);
-    }
-
-    // 4. Last resort fallback to browser
+    // 4. Last resort: open APK download link in external browser
     await Linking.openURL(apkUrl);
     return { success: true };
   } catch (err) {

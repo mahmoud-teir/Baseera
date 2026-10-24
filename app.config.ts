@@ -44,6 +44,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
       'android.permission.ACCESS_FINE_LOCATION',
       'android.permission.POST_NOTIFICATIONS',
       'android.permission.SCHEDULE_EXACT_ALARM',
+      'android.permission.REQUEST_INSTALL_PACKAGES',
     ],
     blockedPermissions: ['android.permission.RECORD_AUDIO'],
   },

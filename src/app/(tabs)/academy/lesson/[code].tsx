@@ -2,6 +2,7 @@
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { View } from 'react-native';
 
+import { PlayGlyph } from '@/components/core/PlayGlyph';
 import { Button } from '@/components/core/Button';
 import { Card } from '@/components/core/Card';
 import { EvidenceBlock } from '@/components/core/EvidenceBlock';
@@ -11,7 +12,7 @@ import { Press } from '@/components/core/Press';
 import { ProgressBar } from '@/components/core/ProgressBar';
 import { Txt } from '@/components/core/Txt';
 import { BackLink, Screen, Title } from '@/components/layout/Screen';
-import { LESSON_CODES } from '@/data/structural';
+import { ALL_LESSON_CODES } from '@/data/structural';
 import { LessonUnavailable, useLesson } from '@/features/academy/useLesson';
 import { isCurrent, playQueue, toggle, useAudio } from '@/services/audio';
 import { lessonStates, useApp } from '@/state/app-store';
@@ -19,7 +20,7 @@ import { useTheme } from '@/theme/theme';
 import { mmss } from '@/utils/date';
 
 export function generateStaticParams() {
-  return LESSON_CODES.map((code) => ({ code }));
+  return ALL_LESSON_CODES.map((code) => ({ code }));
 }
 
 function LessonAudio({ code, title, uri }: { code: string; title: string; uri?: string }) {
@@ -39,9 +40,7 @@ function LessonAudio({ code, title, uri }: { code: string; title: string; uri?: 
         disabled={!uri}
         label={!uri ? 'الشرح الصوتي غير متاح بعد' : playing ? 'إيقاف مؤقت' : 'تشغيل الشرح الصوتي'}
         style={{ width: 42, height: 42, borderRadius: 21, backgroundColor: '#FAF8F2', alignItems: 'center', justifyContent: 'center', opacity: uri ? 1 : 0.55 }}>
-        <Txt size={16} color={pc}>
-          {playing ? '❚❚' : '▶'}
-        </Txt>
+        <PlayGlyph playing={playing} size={14} color={pc} />
       </Press>
       <View style={{ flex: 1, gap: 6 }}>
         <Txt size={15} weight={600} color="#FFFFFF">

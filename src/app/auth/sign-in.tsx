@@ -2,7 +2,7 @@
  * تسجيل الدخول — Step 1 «لدي حساب · تسجيل الدخول» and settings «طرق تسجيل الدخول».
  * Email + password (sign in / create account), email link, password reset. Accounts are optional.
  */
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useState } from 'react';
 import { TextInput, View } from 'react-native';
 
@@ -20,6 +20,7 @@ import { useTheme } from '@/theme/theme';
 export default function SignIn() {
   const { t, r, font } = useTheme();
   const router = useRouter();
+  const { redirect } = useLocalSearchParams<{ redirect?: string }>();
   const flash = useUi((s) => s.flash);
   const pname = useApp((s) => s.pname);
   const set = useApp((s) => s.set);
@@ -30,14 +31,17 @@ export default function SignIn() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
 
-  const run = async (fn: () => Promise<{ ok: true; message?: string } | { ok: false; error: string }>, after?: () => void) => {
+  const run = async (
+    fn: () => Promise<{ ok: true; message?: string } | { ok: false; error: string }>,
+    after?: (msg?: string) => void,
+  ) => {
     setBusy(true);
     setMsg(null);
     try {
       const res = await fn();
       if (res.ok) {
         if (res.message) setMsg({ ok: true, text: res.message });
-        after?.();
+        after?.(res.message);
       } else setMsg({ ok: false, text: res.error });
     } catch (e) {
       setMsg({ ok: false, text: e instanceof Error && 'issues' in e ? (e as unknown as { issues: { message: string }[] }).issues[0].message : 'بيانات غير صحيحة' });
@@ -46,11 +50,11 @@ export default function SignIn() {
     }
   };
 
-  const done = () => {
+  const done = (customMsg?: string) => {
     set({ onboarded: true });
     pull().catch(() => {});
-    flash('مرحبًا بك');
-    router.dismissTo('/account');
+    flash(customMsg ?? 'مرحبًا بك');
+    router.replace((redirect as Href) || '/');
   };
 
   const input = { height: 50, borderWidth: 1, borderColor: t.line, borderRadius: r(14), backgroundColor: t.card, color: t.ink, fontFamily: font('ui'), fontSize: 17, paddingHorizontal: 14, textAlign: 'right' as const };
@@ -76,7 +80,7 @@ export default function SignIn() {
 
   return (
     <Screen gap={14} keyboard>
-      <BackLink label="رجوع" href="/account/settings" />
+      <BackLink label="رجوع" onPress={() => (router.canGoBack() ? router.back() : router.replace('/'))} />
       <Title>{mode === 'in' ? 'تسجيل الدخول' : 'إنشاء حساب'}</Title>
       <Lead>الحساب اختياري: يحفظ تقدّمك ودفتر فوائدك على الخادم لتتابع على أي جهاز، ويُصدر الشهادات باسمك.</Lead>
       {!backendConfigured && (
@@ -112,7 +116,15 @@ export default function SignIn() {
           {msg.text}
         </Txt>
       )}
-      <Button size="lg" disabled={busy || !email || !password} onPress={() => run(() => (mode === 'in' ? signIn(email, password) : signUp(email, password, pname)), mode === 'in' ? done : undefined)}>
+      <Button
+        size="lg"
+        disabled={busy || !email || !password}
+        onPress={() =>
+          run(
+            () => (mode === 'in' ? signIn(email, password) : signUp(email, password, pname)),
+            (resMsg) => done(resMsg),
+          )
+        }>
         {busy ? 'جارٍ…' : mode === 'in' ? 'دخول' : 'إنشاء الحساب'}
       </Button>
       <Button variant="secondary" disabled={busy || !email} onPress={() => run(() => sendMagicLink(email))}>

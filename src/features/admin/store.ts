@@ -14,7 +14,7 @@ import { S, type Lang, type Role } from './strings';
 
 /** Workflow kind shown in queues: evidence · report · lesson · other content. */
 export type Kind = 'ev' | 'rp' | 'ls' | 'ct';
-export type ContentKind = 'lesson' | 'evidence' | 'quote' | 'story' | 'sharia' | 'adhkar' | 'tafsir' | 'tajweed' | 'drill' | 'path' | 'map' | 'page' | 'book' | 'audio';
+export type ContentKind = 'lesson' | 'evidence' | 'quote' | 'vocab' | 'story' | 'sharia' | 'adhkar' | 'tafsir' | 'tajweed' | 'drill' | 'path' | 'map' | 'page' | 'book' | 'audio';
 export type Action = 'send' | 'approve' | 'reject' | 'reopen' | 'triage' | 'fixed' | 'notify';
 export type Json = Record<string, unknown>;
 

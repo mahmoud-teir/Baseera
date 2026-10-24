@@ -3,6 +3,7 @@ import { Card } from '@/components/core/Card';
 import { PendingSlot } from '@/components/core/parts';
 import { Txt } from '@/components/core/Txt';
 import { BackLink, Lead, Screen, Title } from '@/components/layout/Screen';
+import { DEFAULT_FUNDING } from '@/data/defaults';
 import { useContent } from '@/state/content-store';
 import { useTheme } from '@/theme/theme';
 
@@ -10,7 +11,7 @@ const HEADINGS = ['مصادر التمويل', 'المصروفات', 'التقا
 
 export default function Funding() {
   const { t, lhBody } = useTheme();
-  const page = useContent((s) => s.pages.funding);
+  const page = useContent((s) => s.pages.funding) ?? DEFAULT_FUNDING;
   const sections = page?.sections ?? HEADINGS.map((heading) => ({ heading, body: '' }));
   return (
     <Screen gap={12}>

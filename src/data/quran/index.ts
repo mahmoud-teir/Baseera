@@ -140,3 +140,6 @@ export function ayahAudioUrl(reciter: string, s: number, a: number, quality = 'Ø
 
 /** Approximate size of one ayah file for the download quota display (â‰ˆ 60 KB at 128 kbps). */
 export const AYAH_MB = 0.06;
+
+
+export * from './pages';

@@ -33,7 +33,7 @@ describe('console: roles and permissions (design matrix = SQL has_perm)', () => 
     const views = (r: (typeof ROLES)[number]) => VIEWS.filter((v) => v.roles.includes(r)).map((v) => v.id);
     expect(views('mod')).toEqual(['queue', 'reports', 'inbox']);
     expect(views('scholar')).toEqual(['queue', 'evidence', 'catalog', 'library', 'scholars']);
-    expect(views('admin')).toHaveLength(13);
+    expect(views('admin')).toHaveLength(14);
   });
 });
 

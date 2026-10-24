@@ -4,11 +4,14 @@
  * the same records to Supabase when the user signs in and keeps sync on.
  */
 import { useSyncExternalStore } from 'react';
+
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import type { Lesson } from '@/data/content';
+import { addToLog, type QuranEntry, type QuranLog } from '@/features/quran/log';
 import { METHOD_LABEL, useConfig } from '@/state/config-store';
+import { getCalendars } from 'expo-localization';
 import { DAY, dayKey, startOfDay } from '@/utils/date';
 
 import { safeStorage } from './storage';
@@ -21,7 +24,9 @@ export type PlanMinutes = 5 | 15 | 30;
 export const SETTINGS_DEFAULTS = {
   lang: 'العربية',
   loc: 'تلقائي',
-  calc: 'رابطة العالم الإسلامي',
+  calc: 'تلقائي حسب البلد',
+  /** Prayer-time format; the default follows the phone (see settingDefault). */
+  clock: '12 ساعة',
   asr: 'الجمهور',
   adj: '0',
   prayNotif: true,
@@ -38,14 +43,28 @@ export const SETTINGS_DEFAULTS = {
   nSeason: true,
   nContent: false,
   sync: true,
+  quranMode: 'صفحات المصحف',
+  tafsir: 'تفسير السعدي',
+  quranRem: true,
+  muadhin: 'makkah',
 };
 export type SettingsValues = typeof SETTINGS_DEFAULTS;
+
+/** Whether the phone is set to a 24-hour clock (unknown → 12-hour, the common Arabic convention). */
+function phoneUses24h(): boolean {
+  try {
+    return getCalendars()[0]?.uses24hourClock === true;
+  } catch {
+    return false;
+  }
+}
 
 /** Default for a setting the user has not changed: the console's published defaults first. */
 export function settingDefault<K extends keyof SettingsValues>(k: K): SettingsValues[K] {
   const p = useConfig.getState().prayer;
   if (k === 'calc') return METHOD_LABEL[p.method] as SettingsValues[K];
   if (k === 'prayNotif') return p.notifications as SettingsValues[K];
+  if (k === 'clock') return (phoneUses24h() ? '24 ساعة' : '12 ساعة') as SettingsValues[K];
   return SETTINGS_DEFAULTS[k];
 }
 export type SettingKey = keyof SettingsValues;
@@ -83,10 +102,42 @@ export interface PendingReport {
   at: number;
 }
 
+export interface DeviceEntry {
+  id: string;
+  title: string;
+  os: string;
+  type: string;
+  lastActive: number;
+}
+
 export interface CoachState {
   rate: Record<number, 'ok' | 'again'>;
   reps: number;
   updatedAt: number;
+}
+
+export interface KhatmahPlan {
+  id: string;
+  title: string;
+  targetDays: number;
+  startPage: number;
+  currentPage: number;
+  startDate: string;
+  targetDate: string;
+}
+
+export interface KhatmahRecord {
+  id: string;
+  title: string;
+  targetDays: number;
+  completedAt: string;
+  durationDays: number;
+}
+
+export interface TasbeehState {
+  daily: Record<string, number>;
+  total: number;
+  customDhikr: string[];
 }
 
 export interface Certificate {
@@ -100,6 +151,11 @@ export interface LocationFix {
   lat: number;
   lon: number;
   label?: string;
+  /** Country name and ISO code, when known (reverse geocoding or the chosen city). */
+  country?: string;
+  cc?: string;
+  /** IANA time zone of the location; prayer times are calculated and shown in it. */
+  tz?: string;
   at: number;
   source: 'gps' | 'manual';
 }
@@ -131,14 +187,27 @@ export interface AppState {
 
   // ── prayer & adhkar
   prayed: Record<string, Record<string, boolean>>;
+  /** Prayer log: when each prayer was ticked (epoch ms), by day key and prayer name. */
+  prayedAt: Record<string, Record<string, number>>;
   adC: Record<string, Record<string, number>>;
   location: LocationFix | null;
+  tasbeeh: TasbeehState;
+  sunanDone: Record<string, Record<string, boolean>>;
+  khatmah: { active: KhatmahPlan | null; history: KhatmahRecord[] };
+  favDuas: string[];
+  favNames: number[];
 
   // ── quran
   fold: Record<number, FolderName>;
   lastRead: { surah: number; ayah: number } | null;
+  /** Explicit Quran reading bookmark (فاصل القراءة) */
+  quranBookmark: { surah: number; ayah: number; page?: number; at: number } | null;
+  /** Starred specific ayahs (المحفوظات - الآيات المميزة بنجمة) */
+  starAyahs: Record<string, { surah: number; ayah: number; at: number }>;
   hifz: Record<number, HifzState>;
   coach: Record<number, CoachState>;
+  /** Quran log: what was read and heard each day, per surah. */
+  quranLog: QuranLog;
 
   // ── library
   downloads: Download[];
@@ -151,6 +220,10 @@ export interface AppState {
   savedQ: string[];
   pendingReports: PendingReport[];
   certificates: Certificate[];
+  devices: Record<string, DeviceEntry>;
+
+  /** Account the personal data on this device belongs to (null = not yet signed in). Not synced. */
+  owner: string | null;
 
   updatedAt: number;
 }
@@ -162,17 +235,38 @@ interface Actions {
 
   recordQuiz: (lesson: Lesson, answers: number[]) => { pct: number; right: number; pass: boolean };
   rateSrs: (id: string, days: 1 | 3 | 7) => void;
-  resetProgress: () => void;
+        resetProgress: () => void;
+  recordDevice: (entry: DeviceEntry) => void;
+  removeDevice: (id: string) => void;
 
   togglePlan: (min: PlanMinutes, i: number) => void;
-  togglePrayed: (name: string) => void;
+  /** Tick or untick a prayer for a day (today by default) and record when it was ticked. */
+  togglePrayed: (name: string, day?: string) => void;
   /** Count one recitation of an adhkar item (keyed by category id + item id). */
   tapDhikr: (cat: string, itemId: string) => void;
+  /** Reset counter for one recitation of an adhkar item. */
+  resetDhikr: (cat: string, itemId: string) => void;
+  /** Reset all adhkar counters for a category for today. */
+  resetCategoryAdhkar: (cat: string) => void;
+  tapTasbeeh: (dhikr?: string) => void;
+  resetTasbeehDay: () => void;
+  addCustomDhikr: (text: string) => void;
+  toggleSunan: (id: string, day?: string) => void;
+  startKhatmah: (targetDays: number, startPage?: number, title?: string) => void;
+  updateKhatmahPage: (page: number) => void;
+  completeKhatmah: () => void;
+  toggleFavDua: (id: string) => void;
+  toggleFavName: (num: number) => void;
 
   cycleFold: (surah: number) => void;
+  setQuranBookmark: (surah: number, ayah: number, page?: number) => void;
+  removeQuranBookmark: () => void;
+  toggleStarAyah: (surah: number, ayah: number) => void;
   cycleHifz: (surah: number) => void;
   rateCoach: (surah: number, ayah: number, r: 'ok' | 'again') => void;
   bumpCoachReps: (surah: number) => void;
+  /** Add to today's Quran log for a surah. */
+  logQuran: (surah: number, e: QuranEntry) => void;
 
   addNote: (text: string) => void;
   deleteNote: (id: string) => void;
@@ -205,20 +299,31 @@ export const INITIAL_STATE: AppState = {
   planMin: 15,
   planDone: {},
   prayed: {},
+  prayedAt: {},
   adC: {},
   location: null,
+  tasbeeh: { daily: {}, total: 0, customDhikr: [] },
+  sunanDone: {},
+  khatmah: { active: null, history: [] },
+  favDuas: [],
+  favNames: [],
   fold: {},
   lastRead: null,
+  quranBookmark: null,
+  starAyahs: {},
   hifz: {},
   coach: {},
+  quranLog: {},
   downloads: [],
   queue: [],
   lastBook: null,
+  owner: null,
   bookFs: 0,
   notes: [],
   savedQ: [],
   pendingReports: [],
   certificates: [],
+  devices: {},
   updatedAt: 0,
 };
 
@@ -275,7 +380,14 @@ export const useApp = create<AppState & Actions>()(
           touch({ srs: { ...get().srs, [id]: { ...card, interval: days, due: startOfDay() + days * DAY, reviews: card.reviews + 1 } } });
         },
         resetProgress: () =>
-          touch({ passed: {}, attempts: {}, lastAnswers: {}, mast: {}, pathDone: {}, prayed: {}, adC: {}, srs: {}, planDone: {} }),
+          touch({ passed: {}, attempts: {}, lastAnswers: {}, mast: {}, pathDone: {}, prayed: {}, prayedAt: {}, quranLog: {}, adC: {}, srs: {}, planDone: {} }),
+        recordDevice: (entry) =>
+          touch({ devices: { ...get().devices, [entry.id]: entry } }),
+        removeDevice: (id) => {
+          const copy = { ...get().devices };
+          delete copy[id];
+          touch({ devices: copy });
+        },
 
         togglePlan: (min, i) => {
           const k = dayKey();
@@ -283,11 +395,18 @@ export const useApp = create<AppState & Actions>()(
           day[`${min}:${i}`] = !day[`${min}:${i}`];
           touch({ planDone: { ...get().planDone, [k]: day } });
         },
-        togglePrayed: (name) => {
-          const k = dayKey();
+        logQuran: (surah, e) => {
+          if (!e.read?.length && !e.heard?.length && !e.seconds) return;
+          touch({ quranLog: addToLog(get().quranLog, dayKey(), surah, e, Date.now()) });
+        },
+        togglePrayed: (name, dayArg) => {
+          const k = dayArg ?? dayKey();
           const day = { ...(get().prayed[k] ?? {}) };
+          const times = { ...(get().prayedAt[k] ?? {}) };
           day[name] = !day[name];
-          touch({ prayed: { ...get().prayed, [k]: day } });
+          if (day[name]) times[name] = Date.now();
+          else delete times[name];
+          touch({ prayed: { ...get().prayed, [k]: day }, prayedAt: { ...get().prayedAt, [k]: times } });
         },
         tapDhikr: (cat, itemId) => {
           const k = dayKey();
@@ -295,6 +414,111 @@ export const useApp = create<AppState & Actions>()(
           const key = `${cat}:${itemId}`;
           day[key] = (day[key] ?? 0) + 1;
           touch({ adC: { ...get().adC, [k]: day } });
+        },
+        resetDhikr: (cat, itemId) => {
+          const k = dayKey();
+          const day = { ...(get().adC[k] ?? {}) };
+          const key = `${cat}:${itemId}`;
+          delete day[key];
+          touch({ adC: { ...get().adC, [k]: day } });
+        },
+        resetCategoryAdhkar: (cat) => {
+          const k = dayKey();
+          const day = { ...(get().adC[k] ?? {}) };
+          for (const key of Object.keys(day)) {
+            if (key.startsWith(`${cat}:`)) {
+              delete day[key];
+            }
+          }
+          touch({ adC: { ...get().adC, [k]: day } });
+        },
+
+        tapTasbeeh: () => {
+          const k = dayKey();
+          const prev = get().tasbeeh ?? { daily: {}, total: 0, customDhikr: [] };
+          const daily = { ...(prev.daily ?? {}) };
+          daily[k] = (daily[k] ?? 0) + 1;
+          touch({
+            tasbeeh: {
+              ...prev,
+              daily,
+              total: (prev.total ?? 0) + 1,
+            },
+          });
+        },
+        resetTasbeehDay: () => {
+          const k = dayKey();
+          const prev = get().tasbeeh ?? { daily: {}, total: 0, customDhikr: [] };
+          const daily = { ...(prev.daily ?? {}) };
+          delete daily[k];
+          touch({ tasbeeh: { ...prev, daily } });
+        },
+        addCustomDhikr: (text) => {
+          const prev = get().tasbeeh ?? { daily: {}, total: 0, customDhikr: [] };
+          const trimmed = text.trim();
+          if (!trimmed || prev.customDhikr?.includes(trimmed)) return;
+          touch({ tasbeeh: { ...prev, customDhikr: [...(prev.customDhikr ?? []), trimmed] } });
+        },
+        toggleSunan: (id, dayArg) => {
+          const k = dayArg ?? dayKey();
+          const day = { ...(get().sunanDone?.[k] ?? {}) };
+          day[id] = !day[id];
+          touch({ sunanDone: { ...(get().sunanDone ?? {}), [k]: day } });
+        },
+        startKhatmah: (targetDays, startPage = 1, title = 'ختمة القرآن الكريم') => {
+          const now = new Date();
+          const target = new Date(now.getTime() + targetDays * DAY);
+          const active: KhatmahPlan = {
+            id: uid(),
+            title,
+            targetDays,
+            startPage,
+            currentPage: startPage,
+            startDate: dayKey(now),
+            targetDate: dayKey(target),
+          };
+          touch({
+            khatmah: {
+              ...(get().khatmah ?? { active: null, history: [] }),
+              active,
+            },
+          });
+        },
+        updateKhatmahPage: (page) => {
+          const cur = get().khatmah?.active;
+          if (!cur) return;
+          const capped = Math.max(1, Math.min(604, page));
+          touch({
+            khatmah: {
+              ...(get().khatmah ?? { active: null, history: [] }),
+              active: { ...cur, currentPage: capped },
+            },
+          });
+        },
+        completeKhatmah: () => {
+          const k = get().khatmah;
+          if (!k?.active) return;
+          const record: KhatmahRecord = {
+            id: k.active.id,
+            title: k.active.title,
+            targetDays: k.active.targetDays,
+            completedAt: dayKey(),
+            durationDays: Math.max(1, Math.round((Date.now() - new Date(k.active.startDate).getTime()) / DAY)),
+          };
+          touch({
+            khatmah: {
+              active: null,
+              history: [record, ...(k.history ?? [])],
+            },
+          });
+        },
+        toggleFavDua: (id) => {
+          const prev = get().favDuas ?? [];
+          touch({ favDuas: prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id] });
+        },
+        toggleFavName: (num) => {
+          const prev = get().favNames ?? [];
+          touch({ favNames: prev.includes(num) ? prev.filter((x) => x !== num) : [...prev, num] });
         },
 
         cycleFold: (n) => {
@@ -304,6 +528,22 @@ export const useApp = create<AppState & Actions>()(
           else if (f === 'للحفظ') fold[n] = 'للمراجعة';
           else delete fold[n];
           touch({ fold });
+        },
+        setQuranBookmark: (surah, ayah, page) => {
+          touch({ quranBookmark: { surah, ayah, page, at: Date.now() }, lastRead: { surah, ayah } });
+        },
+        removeQuranBookmark: () => {
+          touch({ quranBookmark: null });
+        },
+        toggleStarAyah: (surah, ayah) => {
+          const key = `${surah}:${ayah}`;
+          const next = { ...get().starAyahs };
+          if (next[key]) {
+            delete next[key];
+          } else {
+            next[key] = { surah, ayah, at: Date.now() };
+          }
+          touch({ starAyahs: next });
         },
         cycleHifz: (n) => {
           const v = (get().hifz[n] ?? 0) as number;

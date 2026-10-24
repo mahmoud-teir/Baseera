@@ -10,6 +10,7 @@ import { Txt } from '@/components/core/Txt';
 import { Hero } from '@/components/layout/Hero';
 import { BackLink, Note, Screen } from '@/components/layout/Screen';
 import { PATHS } from '@/data/structural';
+import { DEFAULT_PATHS } from '@/data/defaults';
 import { useApp } from '@/state/app-store';
 import { useContent } from '@/state/content-store';
 import { useTheme } from '@/theme/theme';
@@ -25,8 +26,9 @@ export default function PathScreen() {
   const router = useRouter();
   const pathDone = useApp((s) => s.pathDone);
   const set = useApp((s) => s.set);
-  const steps = useContent((s) => s.paths[p.id]?.steps) ?? [];
-  const minutes = useContent((s) => s.paths[p.id]?.minutes);
+  const pathData = useContent((s) => s.paths[p.id]) ?? DEFAULT_PATHS[p.id];
+  const steps = pathData?.steps ?? [];
+  const minutes = pathData?.minutes;
   const dn = steps.filter((_, i) => pathDone[`${p.id}:${i}`]).length;
   const toggleDone = (i: number) => set({ pathDone: { ...pathDone, [`${p.id}:${i}`]: !pathDone[`${p.id}:${i}`] } });
   return (

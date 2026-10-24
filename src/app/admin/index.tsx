@@ -1,5 +1,5 @@
-import { Redirect } from 'expo-router';
+import { MobileAdminDashboard } from '@/features/admin/MobileAdminDashboard';
 
 export default function AdminIndex() {
-  return <Redirect href={{ pathname: '/admin/[view]', params: { view: 'queue' } }} />;
+  return <MobileAdminDashboard />;
 }

@@ -56,15 +56,42 @@ export const LessonSchema = LessonDataSchema.extend({
   evidence: z.array(EvidenceSchema),
 });
 
-export const QuoteDataSchema = z.object({ cat: z.string(), text: z.string().min(1), scholar: z.string().min(1), source: z.string().min(1) });
-export const QuoteSchema = z.object({ id: z.string(), cat: z.string(), text: z.string().nullable(), scholar: z.string().nullable(), source: z.string().nullable() });
+export const QuoteDataSchema = z.object({
+  cat: z.string(),
+  text: z.string().min(1),
+  scholar: z.string().min(1),
+  source: z.string().min(1),
+  ...ReviewFields,
+});
+export const QuoteSchema = z.object({
+  id: z.string(),
+  cat: z.string(),
+  text: z.string().nullable(),
+  scholar: z.string().nullable(),
+  source: z.string().nullable(),
+  wajh: z.string().optional(),
+  explain: z.string().optional(),
+  level: z.number().int().min(1).max(4).optional(),
+  reviewers: z.array(z.string()).optional(),
+  reviewedAt: z.string().optional(),
+});
 
 const SourcedText = z.object({ text: z.string().min(1), source: z.string().min(1), ref: z.string().optional(), ...ReviewFields });
 /** kind = story (slot `${tab}/${i}`) and sharia (slot `${topic}/${sub}`): sections keyed by heading. */
 export const SectionsDataSchema = z.object({ sections: z.record(z.string(), SourcedText) });
 /** kind = adhkar (slot = category id). */
 export const AdhkarDataSchema = z.object({
-  items: z.array(z.object({ id: z.string().min(1), text: z.string().min(1), count: z.number().int().min(1), source: z.string().min(1), ref: z.string().optional(), virtue: z.string().optional() })),
+  items: z.array(
+    z.object({
+      id: z.string().min(1),
+      text: z.string().min(1),
+      count: z.number().int().min(1),
+      source: z.string().min(1),
+      ref: z.string().optional(),
+      virtue: z.string().optional(),
+      ...ReviewFields,
+    }),
+  ),
 });
 /** kind = tafsir (slot = surah number). */
 export const TafsirDataSchema = z.object({ tafsir: z.string().min(1), source: z.string().min(1), ayahs: z.record(z.string(), z.string()) });
@@ -83,6 +110,38 @@ export const PathDataSchema = z.object({
 export const MapDataSchema = z.object({ links: z.array(z.object({ label: z.string().min(1), target: AppRoute })).min(1) });
 /** kind = page (slot = 'funding'). */
 export const PageDataSchema = z.object({ sections: z.array(z.object({ heading: z.string().min(1), body: z.string().min(1) })).min(1) });
+
+/** kind = vocab (slot = vocab slug, e.g. 'taghut'). مفردات وغريب القرآن الكريم. */
+export const QuranVocabAyahSchema = z.object({
+  surah: z.number().int().min(1).max(114),
+  ayah: z.number().int().min(1),
+  surahName: z.string().min(1),
+  text: z.string().min(1),
+  tafsir: z.string().min(1),
+  source: z.string().min(1),
+  wajh: z.string().min(1),
+});
+
+export const QuranVocabScholarQuoteSchema = z.object({
+  scholar: z.string().min(1),
+  text: z.string().min(1),
+  source: z.string().min(1),
+});
+
+export const QuranVocabItemSchema = z.object({
+  id: z.string().min(1),
+  word: z.string().min(1),
+  root: z.string().optional(),
+  category: z.string().min(1),
+  meaning: z.string().min(1),
+  ayahs: z.array(QuranVocabAyahSchema).min(1),
+  quotes: z.array(QuranVocabScholarQuoteSchema).default([]),
+  ...ReviewFields,
+});
+
+export type QuranVocabItem = z.infer<typeof QuranVocabItemSchema>;
+export type QuranVocabAyah = z.infer<typeof QuranVocabAyahSchema>;
+export type QuranVocabScholarQuote = z.infer<typeof QuranVocabScholarQuoteSchema>;
 
 export type Evidence = z.infer<typeof EvidenceSchema>;
 export type Section = z.infer<typeof SectionSchema>;

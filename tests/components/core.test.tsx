@@ -6,6 +6,7 @@ import { Card } from '@/components/core/Card';
 import { Chip } from '@/components/core/Chip';
 import { EvidenceBlock } from '@/components/core/EvidenceBlock';
 import { LessonRow } from '@/components/core/LessonRow';
+import { Ring } from '@/components/core/parts';
 import { ProgressBar } from '@/components/core/ProgressBar';
 import { Txt } from '@/components/core/Txt';
 import { ThemeProvider } from '@/theme/theme';
@@ -89,5 +90,16 @@ describe('ProgressBar', () => {
   it('clamps to 0–100 and exposes its value', async () => {
     await wrap(<ProgressBar value={140} label="تقدّم" />);
     expect(screen.getByLabelText('تقدّم')).toHaveAccessibilityValue({ now: 100 });
+  });
+});
+
+describe('Ring (adhkar counter)', () => {
+  it('renders progress and inner content without crashing', async () => {
+    await wrap(
+      <Ring pct={100} color="#0E5A44" track="#E2E8F0">
+        <Txt>100</Txt>
+      </Ring>,
+    );
+    expect(screen.getByText('100')).toBeTruthy();
   });
 });

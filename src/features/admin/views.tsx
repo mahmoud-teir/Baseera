@@ -5,6 +5,7 @@ import { ScrollView, TextInput, View } from 'react-native';
 import { surah } from '@/data/quran';
 import { ADHKAR, LESSON_CODES, MAP_NODES, PATHS, SHARIA_TOPICS, STORIES, SUBJECTS, TAJWEED_TOPICS, storyTitle, type StoryTab } from '@/data/structural';
 import { METHOD_LABEL, plannedCount, type Curriculum, type PrayerConfig } from '@/state/config-store';
+import { useLayout } from '@/theme/layout';
 
 import { Range, Select } from './controls';
 import { download, exportRows } from './download';
@@ -325,6 +326,8 @@ function ItemRow({ i, on, onPress, check }: { i: Item; on: boolean; onPress: () 
 }
 
 export function SplitView({ view, st, setSt }: { view: ViewId; st: SplitState; setSt: (p: Partial<SplitState>) => void }) {
+  const { wide } = useLayout();
+  const rtl = useRtl();
   const { lang, items, role, transition, curriculum } = useAdmin();
   const L = S[lang];
   const [editing, setEditing] = useState(false);
@@ -359,6 +362,8 @@ export function SplitView({ view, st, setSt }: { view: ViewId; st: SplitState; s
   };
   const [draftSlot, setDraftSlot] = useState<string | null>(null);
 
+  const showDetailMobile = !wide && (!!cur || !!draftSlot);
+
   return (
     <View>
       <Head
@@ -390,67 +395,93 @@ export function SplitView({ view, st, setSt }: { view: ViewId; st: SplitState; s
           </View>
         }
       />
-      <View style={{ flexDirection: 'row', gap: 18, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-        <Card style={{ flexGrow: 1, flexShrink: 1, flexBasis: 340, maxWidth: 460, overflow: 'hidden' }}>
-          {chkIds.length ? (
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingHorizontal: 14, backgroundColor: C.green }}>
-              <T size={13} color={C.white} style={{ flex: 1 }}>
-                {`${chkIds.length} ${L.selected}`}
+      <View style={{ flexDirection: wide ? 'row' : 'column', gap: 16, alignItems: 'stretch' }}>
+        {(!showDetailMobile || wide) && (
+          <Card style={{ flexGrow: 1, flexShrink: 1, flexBasis: wide ? 340 : undefined, maxWidth: wide ? 460 : '100%', width: wide ? undefined : '100%', overflow: 'hidden' }}>
+            {chkIds.length ? (
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, paddingVertical: 10, paddingHorizontal: 14, backgroundColor: C.green }}>
+                <T size={13} color={C.white} style={{ flex: 1 }}>
+                  {`${chkIds.length} ${L.selected}`}
+                </T>
+                <P onPress={bulk} label={L.bulkAdv} style={{ borderRadius: 6, paddingVertical: 5, paddingHorizontal: 10, backgroundColor: C.gold }}>
+                  <T size={13} w={600} color="#2a2008">
+                    {L.bulkAdv}
+                  </T>
+                </P>
+                <P onPress={() => setSt({ chk: {} })} label={L.clear} style={{ borderRadius: 6, paddingVertical: 5, paddingHorizontal: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,.4)' }}>
+                  <T size={13} color={C.white}>
+                    {L.clear}
+                  </T>
+                </P>
+              </View>
+            ) : null}
+            {!list.length ? (
+              <T color={C.sub} style={{ paddingVertical: 36, paddingHorizontal: 20, textAlign: 'center' }}>
+                {L.empty}
               </T>
-              <P onPress={bulk} label={L.bulkAdv} style={{ borderRadius: 6, paddingVertical: 5, paddingHorizontal: 10, backgroundColor: C.gold }}>
-                <T size={13} w={600} color="#2a2008">
-                  {L.bulkAdv}
-                </T>
-              </P>
-              <P onPress={() => setSt({ chk: {} })} label={L.clear} style={{ borderRadius: 6, paddingVertical: 5, paddingHorizontal: 10, borderWidth: 1, borderColor: 'rgba(255,255,255,.4)' }}>
-                <T size={13} color={C.white}>
-                  {L.clear}
-                </T>
-              </P>
-            </View>
-          ) : null}
-          {!list.length ? (
-            <T color={C.sub} style={{ paddingVertical: 36, paddingHorizontal: 20, textAlign: 'center' }}>
-              {L.empty}
-            </T>
-          ) : null}
-          {list.map((i) => (
-            <ItemRow
-              key={i.id}
-              i={i}
-              on={st.sel === i.id}
-              onPress={() => {
-                setEditing(false);
-                setDraftSlot(null);
-                setSt({ sel: i.id });
-              }}
-              check={{ checked: !!st.chk[i.id], toggle: () => setSt({ chk: { ...st.chk, [i.id]: !st.chk[i.id] } }) }}
-            />
-          ))}
-        </Card>
-        <Card style={{ flexGrow: 2, flexShrink: 1, flexBasis: 420, padding: 24, minHeight: 420 }}>
-          {draftSlot ? (
-            <View style={{ gap: 12 }}>
-              <T size={12} color={C.sub}>{`${L.kEv} · ${draftSlot}`}</T>
-              <ContentEditor
-                key={draftSlot}
-                kind="evidence"
-                slot={draftSlot}
-                initial={emptyData('evidence', curriculum.passPct)}
-                onSaved={(id) => {
+            ) : null}
+            {list.map((i) => (
+              <ItemRow
+                key={i.id}
+                i={i}
+                on={st.sel === i.id}
+                onPress={() => {
+                  setEditing(false);
                   setDraftSlot(null);
-                  setSt({ sel: 'ct:' + id });
+                  setSt({ sel: i.id });
                 }}
+                check={{ checked: !!st.chk[i.id], toggle: () => setSt({ chk: { ...st.chk, [i.id]: !st.chk[i.id] } }) }}
               />
-            </View>
-          ) : cur ? (
-            <Detail it={cur} editing={editing} setEditing={setEditing} />
-          ) : (
-            <T color={C.sub} style={{ textAlign: 'center', paddingTop: 150 }}>
-              {L.pick}
-            </T>
-          )}
-        </Card>
+            ))}
+          </Card>
+        )}
+        {(showDetailMobile || wide) && (
+          <Card style={{ flexGrow: 2, flexShrink: 1, flexBasis: wide ? 420 : undefined, width: wide ? undefined : '100%', padding: wide ? 24 : 16, minHeight: 360 }}>
+            {showDetailMobile && (
+              <P
+                onPress={() => {
+                  setEditing(false);
+                  setDraftSlot(null);
+                  setSt({ sel: null });
+                }}
+                label={lang === 'ar' ? 'العودة إلى القائمة' : 'Back to list'}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 6,
+                  paddingBottom: 10,
+                  marginBottom: 12,
+                  borderBottomWidth: 1,
+                  borderBottomColor: C.lineSoft,
+                }}>
+                <T size={14} w={600} color={C.green}>
+                  {rtl ? '→' : '←'} {lang === 'ar' ? 'العودة إلى القائمة' : 'Back to list'}
+                </T>
+              </P>
+            )}
+            {draftSlot ? (
+              <View style={{ gap: 12 }}>
+                <T size={12} color={C.sub}>{`${L.kEv} · ${draftSlot}`}</T>
+                <ContentEditor
+                  key={draftSlot}
+                  kind="evidence"
+                  slot={draftSlot}
+                  initial={emptyData('evidence', curriculum.passPct)}
+                  onSaved={(id) => {
+                    setDraftSlot(null);
+                    setSt({ sel: 'ct:' + id });
+                  }}
+                />
+              </View>
+            ) : cur ? (
+              <Detail it={cur} editing={editing} setEditing={setEditing} />
+            ) : (
+              <T color={C.sub} style={{ textAlign: 'center', paddingTop: 140 }}>
+                {L.pick}
+              </T>
+            )}
+          </Card>
+        )}
       </View>
     </View>
   );
@@ -458,9 +489,11 @@ export function SplitView({ view, st, setSt }: { view: ViewId; st: SplitState; s
 
 // ── Lessons ──────────────────────────────────────────────────────────────────
 export function LessonsView({ lsel, setLsel }: { lsel: string | null; setLsel: (id: string) => void }) {
+  const { wide } = useLayout();
   const { lang, items, role, curriculum } = useAdmin();
   const L = S[lang];
   const [tab, setTab] = useState<'edit' | 'diff' | 'prev'>('edit');
+  const [mobileTab, setMobileTab] = useState<'editor' | 'list'>('editor');
   const code = lsel && LESSON_CODES.includes(lsel) ? lsel : LESSON_CODES[0];
   const byCode = Object.fromEntries(items.filter((i) => i.ckind === 'lesson').map((i) => [i.slot, i]));
   const lc = byCode[code];
@@ -495,43 +528,72 @@ export function LessonsView({ lsel, setLsel }: { lsel: string | null; setLsel: (
         }
       />
       {can(role, 'roles') ? <CurriculumCard /> : null}
-      <View style={{ flexDirection: 'row', gap: 18, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-        <Card style={{ flexGrow: 1, flexShrink: 1, flexBasis: 260, maxWidth: 320, overflow: 'hidden' }}>
-          <ScrollView style={{ maxHeight: 640 }}>
-            {SUBJECTS.map((s) => (
-              <View key={s.id}>
-                <T size={12} w={600} color={C.sub} style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6, backgroundColor: C.paper }}>
-                  {`${s.name} · ${plannedCount(curriculum, s.id)}`}
-                </T>
-                {LESSON_CODES.filter((c) => c.startsWith(s.prefix + '-')).map((c) => {
-                  const it = byCode[c];
-                  const chip = it ? chipFor(lang, it) : { label: L.notStarted, tone: 'muted' as const };
-                  const on = c === code;
-                  return (
-                    <P
-                      key={c}
-                      label={`${c} ${it?.title ?? ''}`}
-                      onPress={() => setLsel(c)}
-                      accessibilityState={{ selected: on }}
-                      hoverStyle={on ? undefined : { backgroundColor: C.sandSoft }}
-                      style={{ paddingVertical: 11, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: C.lineSoft, flexDirection: 'row', justifyContent: 'space-between', gap: 8, alignItems: 'center', backgroundColor: on ? C.sand : C.white }}>
-                      <View style={{ flexShrink: 1 }}>
-                        <T size={12} color={C.sub} ltr>
-                          {c}
-                        </T>
-                        <T w={500} numberOfLines={1}>
-                          {it?.title && it.title !== c ? it.title : '—'}
-                        </T>
-                      </View>
-                      <Chip tone={chip.tone}>{chip.label}</Chip>
-                    </P>
-                  );
-                })}
-              </View>
-            ))}
-          </ScrollView>
-        </Card>
-        <Card style={{ flexGrow: 3, flexShrink: 1, flexBasis: 460, padding: 24 }}>
+      {!wide && (
+        <View style={{ marginBottom: 14, flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+          <Pill
+            label={mobileTab === 'list' ? (lang === 'ar' ? '← محرر الدرس' : '← Editor') : (lang === 'ar' ? '☰ قائمة الدروس (٥٣)' : '☰ All Lessons (53)')}
+            tone={mobileTab === 'list' ? 'green' : 'gold'}
+            active={mobileTab === 'list'}
+            onPress={() => setMobileTab(mobileTab === 'list' ? 'editor' : 'list')}
+          />
+          {mobileTab === 'editor' && (
+            <View style={{ flex: 1 }}>
+              <Select
+                label={L.lessonWord}
+                value={code}
+                options={LESSON_CODES.map((c) => ({
+                  value: c,
+                  label: `${c} · ${byCode[c]?.title && byCode[c].title !== c ? byCode[c].title : '—'}`,
+                }))}
+                onChange={(c) => setLsel(c)}
+              />
+            </View>
+          )}
+        </View>
+      )}
+      <View style={{ flexDirection: wide ? 'row' : 'column', gap: 18, alignItems: 'stretch' }}>
+        {(wide || mobileTab === 'list') && (
+          <Card style={{ flexGrow: 1, flexShrink: 1, flexBasis: wide ? 260 : undefined, maxWidth: wide ? 320 : '100%', width: wide ? undefined : '100%', overflow: 'hidden' }}>
+            <ScrollView style={{ maxHeight: wide ? 640 : 480 }}>
+              {SUBJECTS.map((s) => (
+                <View key={s.id}>
+                  <T size={12} w={600} color={C.sub} style={{ paddingHorizontal: 16, paddingTop: 12, paddingBottom: 6, backgroundColor: C.paper }}>
+                    {`${s.name} · ${plannedCount(curriculum, s.id)}`}
+                  </T>
+                  {LESSON_CODES.filter((c) => c.startsWith(s.prefix + '-')).map((c) => {
+                    const it = byCode[c];
+                    const chip = it ? chipFor(lang, it) : { label: L.notStarted, tone: 'muted' as const };
+                    const on = c === code;
+                    return (
+                      <P
+                        key={c}
+                        label={`${c} ${it?.title ?? ''}`}
+                        onPress={() => {
+                          setLsel(c);
+                          if (!wide) setMobileTab('editor');
+                        }}
+                        accessibilityState={{ selected: on }}
+                        hoverStyle={on ? undefined : { backgroundColor: C.sandSoft }}
+                        style={{ paddingVertical: 11, paddingHorizontal: 16, borderBottomWidth: 1, borderBottomColor: C.lineSoft, flexDirection: 'row', justifyContent: 'space-between', gap: 8, alignItems: 'center', backgroundColor: on ? C.sand : C.white }}>
+                        <View style={{ flexShrink: 1 }}>
+                          <T size={12} color={C.sub} ltr>
+                            {c}
+                          </T>
+                          <T w={500} numberOfLines={1}>
+                            {it?.title && it.title !== c ? it.title : '—'}
+                          </T>
+                        </View>
+                        <Chip tone={chip.tone}>{chip.label}</Chip>
+                      </P>
+                    );
+                  })}
+                </View>
+              ))}
+            </ScrollView>
+          </Card>
+        )}
+        {(wide || mobileTab === 'editor') && (
+          <Card style={{ flexGrow: 3, flexShrink: 1, flexBasis: wide ? 460 : undefined, width: wide ? undefined : '100%', padding: wide ? 24 : 16 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
             <View style={{ flexDirection: 'row', gap: 6, flexWrap: 'wrap' }} accessibilityRole="tablist">
               {tabs.map(([k, l]) => (
@@ -585,6 +647,7 @@ export function LessonsView({ lsel, setLsel }: { lsel: string | null; setLsel: (
           ) : null}
           {tab === 'prev' ? <PhonePreview data={data} /> : null}
         </Card>
+        )}
       </View>
     </View>
   );
@@ -717,9 +780,11 @@ function slotsFor(kind: ContentKind, items: Item[]): SlotDef[] {
 }
 
 export function CatalogView({ library }: { library?: boolean }) {
+  const { wide } = useLayout();
+  const rtl = useRtl();
   const { lang, items, role, curriculum } = useAdmin();
   const L = S[lang];
-  const kinds: ContentKind[] = library ? ['book', 'audio'] : ['quote', 'story', 'sharia', 'adhkar', 'tafsir', 'tajweed', 'drill', 'path', 'map', 'page'];
+  const kinds: ContentKind[] = library ? ['book', 'audio'] : ['quote', 'vocab', 'story', 'sharia', 'adhkar', 'tafsir', 'tajweed', 'drill', 'path', 'map', 'page'];
   const [kind, setKind] = useState<ContentKind>(kinds[0]);
   const [slot, setSlot] = useState<string | null>(null);
   const [q, setQ] = useState('');
@@ -734,6 +799,7 @@ export function CatalogView({ library }: { library?: boolean }) {
     setFresh(null);
     setEditing(false);
   };
+  const showDetailMobile = !wide && (!!slot || !!fresh);
   return (
     <View>
       <Head
@@ -767,52 +833,78 @@ export function CatalogView({ library }: { library?: boolean }) {
           />
         ))}
       </View>
-      <View style={{ flexDirection: 'row', gap: 18, alignItems: 'flex-start', flexWrap: 'wrap' }}>
-        <Card style={{ flexGrow: 1, flexShrink: 1, flexBasis: 300, maxWidth: 420, overflow: 'hidden' }}>
-          <View style={{ padding: 10, borderBottomWidth: 1, borderBottomColor: C.lineSoft }}>
-            <Input value={q} onChange={setQ} label={L.search} placeholder={L.search} />
-          </View>
-          <ScrollView style={{ maxHeight: 620 }}>
-            {!slots.length ? (
-              <T color={C.sub} style={{ padding: 24, textAlign: 'center' }}>
-                {L.empty}
-              </T>
-            ) : null}
-            {slots.map((s) => {
-              const x = bySlot[s.slot];
-              const chip = x ? chipFor(lang, x) : { label: L.notStarted, tone: 'muted' as const };
-              const on = s.slot === slot;
-              return (
-                <P
-                  key={s.slot}
-                  label={s.label}
-                  onPress={() => pick(s.slot)}
-                  accessibilityState={{ selected: on }}
-                  hoverStyle={on ? undefined : { backgroundColor: C.sandSoft }}
-                  style={{ paddingVertical: 11, paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: C.lineSoft, flexDirection: 'row', justifyContent: 'space-between', gap: 8, alignItems: 'center', backgroundColor: on ? C.sand : C.white }}>
-                  <T w={500} numberOfLines={1} style={{ flexShrink: 1 }}>
-                    {s.label}
-                  </T>
-                  <Chip tone={chip.tone}>{chip.label}</Chip>
-                </P>
-              );
-            })}
-          </ScrollView>
-        </Card>
-        <Card style={{ flexGrow: 2, flexShrink: 1, flexBasis: 440, padding: 24, minHeight: 360 }}>
-          {!slot ? (
-            <T color={C.sub} style={{ textAlign: 'center', paddingTop: 120 }}>
-              {L.pick}
-            </T>
-          ) : it && !fresh ? (
-            <Detail key={it.id} it={it} editing={editing} setEditing={setEditing} />
-          ) : (
-            <View style={{ gap: 12 }}>
-              <T size={12} color={C.sub}>{`${L.kinds[kind]} · ${slotsFor(kind, items).find((s) => s.slot === slot)?.label ?? slot}`}</T>
-              <ContentEditor key={`${kind}:${slot}`} kind={kind} slot={slot} initial={emptyData(kind, curriculum.passPct)} disabled={!can(role, 'edit')} onSaved={() => setFresh(null)} />
+      <View style={{ flexDirection: wide ? 'row' : 'column', gap: 18, alignItems: 'stretch' }}>
+        {(!showDetailMobile || wide) && (
+          <Card style={{ flexGrow: 1, flexShrink: 1, flexBasis: wide ? 300 : undefined, maxWidth: wide ? 420 : '100%', width: wide ? undefined : '100%', overflow: 'hidden' }}>
+            <View style={{ padding: 10, borderBottomWidth: 1, borderBottomColor: C.lineSoft }}>
+              <Input value={q} onChange={setQ} label={L.search} placeholder={L.search} />
             </View>
-          )}
-        </Card>
+            <ScrollView style={{ maxHeight: wide ? 620 : 420 }}>
+              {!slots.length ? (
+                <T color={C.sub} style={{ padding: 24, textAlign: 'center' }}>
+                  {L.empty}
+                </T>
+              ) : null}
+              {slots.map((s) => {
+                const x = bySlot[s.slot];
+                const chip = x ? chipFor(lang, x) : { label: L.notStarted, tone: 'muted' as const };
+                const on = s.slot === slot;
+                return (
+                  <P
+                    key={s.slot}
+                    label={s.label}
+                    onPress={() => pick(s.slot)}
+                    accessibilityState={{ selected: on }}
+                    hoverStyle={on ? undefined : { backgroundColor: C.sandSoft }}
+                    style={{ paddingVertical: 11, paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: C.lineSoft, flexDirection: 'row', justifyContent: 'space-between', gap: 8, alignItems: 'center', backgroundColor: on ? C.sand : C.white }}>
+                    <T w={500} numberOfLines={1} style={{ flexShrink: 1 }}>
+                      {s.label}
+                    </T>
+                    <Chip tone={chip.tone}>{chip.label}</Chip>
+                  </P>
+                );
+              })}
+            </ScrollView>
+          </Card>
+        )}
+        {(showDetailMobile || wide) && (
+          <Card style={{ flexGrow: 2, flexShrink: 1, flexBasis: wide ? 440 : undefined, width: wide ? undefined : '100%', padding: wide ? 24 : 16, minHeight: 360 }}>
+            {showDetailMobile && (
+              <P
+                onPress={() => {
+                  setEditing(false);
+                  setFresh(null);
+                  setSlot(null);
+                }}
+                label={lang === 'ar' ? 'العودة إلى القائمة' : 'Back to list'}
+                style={{
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 6,
+                  paddingBottom: 10,
+                  marginBottom: 12,
+                  borderBottomWidth: 1,
+                  borderBottomColor: C.lineSoft,
+                }}>
+                <T size={14} w={600} color={C.green}>
+                  {rtl ? '→' : '←'} {lang === 'ar' ? 'العودة إلى القائمة' : 'Back to list'}
+                </T>
+              </P>
+            )}
+            {!slot ? (
+              <T color={C.sub} style={{ textAlign: 'center', paddingTop: 120 }}>
+                {L.pick}
+              </T>
+            ) : it && !fresh ? (
+              <Detail key={it.id} it={it} editing={editing} setEditing={setEditing} />
+            ) : (
+              <View style={{ gap: 12 }}>
+                <T size={12} color={C.sub}>{`${L.kinds[kind]} · ${slotsFor(kind, items).find((s) => s.slot === slot)?.label ?? slot}`}</T>
+                <ContentEditor key={`${kind}:${slot}`} kind={kind} slot={slot} initial={emptyData(kind, curriculum.passPct)} disabled={!can(role, 'edit')} onSaved={() => setFresh(null)} />
+              </View>
+            )}
+          </Card>
+        )}
       </View>
     </View>
   );

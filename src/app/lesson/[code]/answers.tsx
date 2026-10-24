@@ -7,13 +7,13 @@ import { Pill } from '@/components/core/parts';
 import { Txt } from '@/components/core/Txt';
 import { BackLink, Screen, Title } from '@/components/layout/Screen';
 import { type Lesson } from '@/data/content';
-import { LESSON_CODES, type Subject } from '@/data/structural';
+import { ALL_LESSON_CODES, type Subject } from '@/data/structural';
 import { LessonUnavailable, useLesson } from '@/features/academy/useLesson';
 import { scoreQuiz, useApp } from '@/state/app-store';
 import { useTheme } from '@/theme/theme';
 
 export function generateStaticParams() {
-  return LESSON_CODES.map((code) => ({ code }));
+  return ALL_LESSON_CODES.map((code) => ({ code }));
 }
 
 export default function Answers() {

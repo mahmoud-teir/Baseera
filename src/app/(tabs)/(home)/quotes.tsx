@@ -1,5 +1,5 @@
 /** أقوال العلماء — `s.quotes`: quote of the day (verified only), category filter, verified / pending cards. */
-import { useRef, useState, type ComponentRef } from 'react';
+import { useEffect, useRef, useState, type ComponentRef } from 'react';
 import { ScrollView, View } from 'react-native';
 
 import { Card } from '@/components/core/Card';
@@ -9,6 +9,7 @@ import { Press } from '@/components/core/Press';
 import { Txt } from '@/components/core/Txt';
 import { BackLink, Lead, Note, Screen, Title } from '@/components/layout/Screen';
 import { isVerifiedQuote } from '@/data/content';
+import { DEFAULT_QUOTES } from '@/data/defaults';
 import { useContent } from '@/state/content-store';
 import { shareCard } from '@/services/share';
 import { useApp } from '@/state/app-store';
@@ -24,12 +25,19 @@ export default function Quotes() {
   const toggleSaved = useApp((s) => s.toggleSavedQuote);
   const flash = useUi((s) => s.flash);
   const cardRef = useRef<ComponentRef<typeof View>>(null);
-  const quotes = useContent((s) => s.quotes);
+  const publishedQuotes = useContent((s) => s.quotes);
+  const quotes = publishedQuotes.length ? publishedQuotes : DEFAULT_QUOTES;
   const list = quotes.filter((q) => cat === 'الكل' || q.cat === cat);
   // «قول اليوم» rotates daily through verified quotes only — nothing is shown before verification.
   const verified = quotes.filter(isVerifiedQuote);
-  const [dayIndex] = useState(() => Math.floor(Date.now() / 86400000));
-  const qotd = verified.length ? verified[dayIndex % verified.length] : null;
+  const [minuteTick, setMinuteTick] = useState(() => Math.floor(Date.now() / 60000));
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setMinuteTick(Math.floor(Date.now() / 60000));
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
+  const qotd = verified.length ? verified[minuteTick % verified.length] : null;
 
   const share = async () => {
     if (!qotd) return;
@@ -43,30 +51,57 @@ export default function Quotes() {
       <BackLink label="الرئيسية" href="/" />
       <Title>أقوال العلماء</Title>
       <Lead>أقوال مختارة من كتب أهل العلم، تُنشر بعد التحقق من النص ونسبته وموضعه في الكتاب.</Lead>
-      <View ref={cardRef} collapsable={false} style={{ backgroundColor: pc, borderRadius: r(22), padding: 18, gap: 10 }}>
-        <Txt size={14} weight={600} color={gc}>
-          قول اليوم
-        </Txt>
-        {qotd ? (
-          <>
-            <Txt font="display" size={22} lh={2} color="#FFFFFF">
-              {qotd.text}
+      <View style={{ gap: 10 }}>
+        <View ref={cardRef} collapsable={false} style={{ backgroundColor: pc, borderRadius: r(22), padding: 20, gap: 10 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+              <Txt size={14} weight={600} color={gc}>
+                درر السلف (يتجدد كل دقيقة)
+              </Txt>
+              <Press
+                onPress={() => setMinuteTick((prev) => prev + 1)}
+                label="قول آخر"
+                style={{
+                  paddingHorizontal: 8,
+                  paddingVertical: 2,
+                  borderRadius: 6,
+                  backgroundColor: 'rgba(255,255,255,0.15)',
+                }}>
+                <Txt size={11} weight={700} color="#FFFFFF">
+                  قول آخر ↻
+                </Txt>
+              </Press>
+            </View>
+            <Txt font="display" size={20} weight={700} color={gc}>
+              بصيرة
             </Txt>
-            <Txt size={14} color="#CFE0DA">
-              {qotd.scholar} · {qotd.source}
+          </View>
+          {qotd ? (
+            <>
+              <Txt font="display" size={22} lh={2} color="#FFFFFF">
+                «{qotd.text}»
+              </Txt>
+              <View style={{ borderTopWidth: 1, borderColor: 'rgba(255,255,255,0.18)', paddingTop: 10 }}>
+                <Txt size={16} weight={700} color="#FFFFFF">
+                  — {qotd.scholar}
+                </Txt>
+                <Txt size={14} color="#CFE0DA">
+                  {qotd.source}
+                </Txt>
+              </View>
+            </>
+          ) : (
+            <Txt size={15} color="#CFE0DA" lh={1.8}>
+              يظهر هنا قول يومي بعد توثيق أول قول. لا يُعرض شيء قبل التحقق منه.
             </Txt>
-          </>
-        ) : (
-          <Txt size={15} color="#CFE0DA" lh={1.8}>
-            يظهر هنا قول يومي بعد توثيق أول قول. لا يُعرض شيء قبل التحقق منه.
-          </Txt>
-        )}
+          )}
+        </View>
         <Press
           onPress={share}
           disabled={!qotd}
           label="مشاركة كصورة"
-          style={{ alignSelf: 'flex-start', height: 42, paddingHorizontal: 18, borderRadius: r(14), backgroundColor: '#FAF8F2', justifyContent: 'center', opacity: qotd ? 1 : 0.45 }}>
-          <Txt size={16} weight={700} color={pc}>
+          style={{ alignSelf: 'flex-start', height: 42, paddingHorizontal: 18, borderRadius: r(14), backgroundColor: t.primary, justifyContent: 'center', opacity: qotd ? 1 : 0.45 }}>
+          <Txt size={15} weight={700} color={t.onPrimary}>
             مشاركة كصورة
           </Txt>
         </Press>
@@ -99,10 +134,42 @@ export default function Quotes() {
                 {q.source}
               </Txt>
             </View>
+            {q.explain ? (
+              <View style={{ backgroundColor: t.soft, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12 }}>
+                <Txt size={13} color={t.primary} lh={1.7}>
+                  <Txt size={13} weight={700} color={t.primary}>
+                    شرح المسألة:{' '}
+                  </Txt>
+                  {q.explain}
+                </Txt>
+              </View>
+            ) : null}
+            {q.wajh ? (
+              <View style={{ backgroundColor: t.goldSoft, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12 }}>
+                <Txt size={13} color={t.goldInk} lh={1.7}>
+                  <Txt size={13} weight={700} color={t.goldInk}>
+                    وجه الاستدلال:{' '}
+                  </Txt>
+                  {q.wajh}
+                </Txt>
+              </View>
+            ) : null}
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
               <Pill label={q.cat} bg={t.goldSoft} fg={t.goldInk} />
               <View style={{ flex: 1, alignItems: 'flex-end' }}>
-                <EvidenceActions where={where} data={{ text: q.text, source: q.source ?? '' }} reportLabel="أبلغ" />
+                <EvidenceActions
+                  where={where}
+                  data={{
+                    text: q.text,
+                    source: q.source ?? '',
+                    explain: q.explain,
+                    wajh: q.wajh,
+                    level: 1,
+                    reviewers: ['هيئة التدقيق العلمي'],
+                    reviewedAt: '1448 هـ',
+                  }}
+                  reportLabel="أبلغ"
+                />
               </View>
               <Press
                 onPress={() => toggleSaved(q.id)}

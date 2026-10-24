@@ -1,8 +1,10 @@
 /** الرئيسية — `s.home` in Baseerah Prototype.dc.html. */
 import { Redirect, useRouter } from 'expo-router';
+import { useEffect, useMemo, useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
 import { Card } from '@/components/core/Card';
+import { DayNightGlyph } from '@/components/core/DayNightGlyph';
 import { Icon } from '@/components/core/Icon';
 import { IconTile, SectionHeader } from '@/components/core/parts';
 import { Press } from '@/components/core/Press';
@@ -12,11 +14,13 @@ import { Hero } from '@/components/layout/Hero';
 import { CornerDiamond } from '@/components/layout/Ornament';
 import { Screen } from '@/components/layout/Screen';
 import { isVerifiedQuote, type Quote } from '@/data/content';
+import { DEFAULT_QUOTES } from '@/data/defaults';
 import { useContent } from '@/state/content-store';
 import { ICON, PATHS, PLAN_TEMPLATES, SUBJECTS } from '@/data/structural';
 import { mapMastery, useAcademy } from '@/features/academy/useAcademy';
 import { usePrayer } from '@/features/prayer/usePrayer';
 import { dueSrsCards, useApp, useHydrated } from '@/state/app-store';
+import { useTawheed } from '@/state/tawheed-store';
 import { useTheme } from '@/theme/theme';
 import { dayKey } from '@/utils/date';
 
@@ -32,11 +36,35 @@ export default function Home() {
   const srs = useApp((s) => s.srs);
   const pathDone = useApp((s) => s.pathDone);
   const hydrated = useHydrated();
+  const completedTawheed = useTawheed((s) => Object.keys(s.completedGates).length);
   const ac = useAcademy();
   const pr = usePrayer();
   const lessons = useContent((s) => s.lessons);
-  const quotes = useContent((s) => s.quotes);
+  const rawQuotes = useContent((s) => s.quotes);
+  const quotes = rawQuotes.length ? rawQuotes : DEFAULT_QUOTES;
   const pathsContent = useContent((s) => s.paths);
+  const [minuteTick, setMinuteTick] = useState(() => Math.floor(Date.now() / 60000));
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setMinuteTick(Math.floor(Date.now() / 60000));
+    }, 60000);
+    return () => clearInterval(timer);
+  }, []);
+  const homeQuotes: Quote[] = useMemo(() => {
+    const verified = quotes.filter(isVerifiedQuote);
+    if (!verified.length) {
+      return [{ id: 'pending', cat: '', text: null, scholar: null, source: null }];
+    }
+    const startIndex = (minuteTick * 3) % verified.length;
+    const selected: Quote[] = [];
+    const count = Math.min(verified.length, 4);
+    for (let i = 0; i < count; i++) {
+      selected.push(verified[(startIndex + i) % verified.length]);
+    }
+    return selected;
+  }, [quotes, minuteTick]);
+
   const map = mapMastery(passed, mast, lessons);
 
   if (hydrated && !onboarded) return <Redirect href="/welcome" />;
@@ -52,7 +80,6 @@ export default function Home() {
     const dn = steps.filter((_, i) => pathDone[`${id}:${i}`]).length;
     return `${steps.length} خطوات${dn ? ` · ${dn} منجزة` : ''}`;
   };
-  const homeQuotes: Quote[] = quotes.length ? quotes.slice(0, 3) : [{ id: 'pending', cat: '', text: null, scholar: null, source: null }];
 
   return (
     <Screen gap={18}>
@@ -65,61 +92,372 @@ export default function Home() {
             أهلًا بك يا طالب العلم
           </Txt>
         </View>
-        <Press
-          onPress={() => set({ dark: !dark })}
-          label={dark ? 'الوضع النهاري' : 'الوضع الليلي'}
-          style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: t.soft, alignItems: 'center', justifyContent: 'center' }}>
-          <Txt size={18} weight={700} color={t.primary}>
-            {dark ? '☀' : '☾'}
-          </Txt>
-        </Press>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Press
+            onPress={() => set({ dark: !dark })}
+            label={dark ? 'الوضع النهاري' : 'الوضع الليلي'}
+            style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: t.soft, alignItems: 'center', justifyContent: 'center' }}>
+            <DayNightGlyph dark={dark} color={t.primary} background={t.soft} size={22} />
+          </Press>
+        </View>
       </View>
 
-      {/* Prayer card */}
-      <Card variant="app" radius={22} pad={0} onPress={() => router.navigate('/prayer')} label="الصلاة القادمة · الأذكار والقبلة">
-        <View style={{ paddingVertical: 14, paddingHorizontal: 16, flexDirection: 'row', alignItems: 'center', gap: 14 }}>
-          <View style={{ flex: 1, gap: 2 }}>
-            <Txt size={14} color={t.muted}>
-              {pr.hijriToday}
+      {/* Rich Prayer Card with Live Seconds Countdown and Rich Details */}
+      <Card
+        variant="app"
+        radius={22}
+        pad={0}
+        onPress={() => router.navigate('/prayer')}
+        label="مواقيت الصلاة والعد التنازلي المباشر بالثواني"
+        style={{
+          borderWidth: 1.5,
+          borderColor: dark ? '#1E3B32' : '#D1E6DD',
+          overflow: 'hidden',
+        }}>
+        {/* Top Header: Location + Hijri Date */}
+        <View
+          style={{
+            flexDirection: 'row',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            paddingHorizontal: 16,
+            paddingTop: 12,
+            paddingBottom: 8,
+            borderBottomWidth: 1,
+            borderBottomColor: dark ? '#162F27' : '#E6EFEA',
+            backgroundColor: dark ? '#0E231C' : '#F4F9F6',
+          }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Icon d={ICON.pin} size={15} color={t.primary} sw={2} />
+            <Txt size={13} weight={600} color={t.ink}>
+              {pr.loc?.label ?? (pr.loc?.source === 'gps' ? 'موقعي الحالي' : 'حدّد موقعك')}
+              {pr.loc?.country ? ` · ${pr.loc.country}` : ''}
             </Txt>
-            <Txt size={14} weight={600} color={t.goldInk}>
-              الصلاة القادمة
+          </View>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+            <Txt size={13} weight={600} color={t.goldInk}>
+              🌙 {pr.hijriToday}
             </Txt>
-            {pr.next ? (
-              <>
-                <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+          </View>
+        </View>
+
+        {/* Main Prayer Row: Next Prayer + Live Seconds Countdown */}
+        <View style={{ paddingHorizontal: 16, paddingTop: 14, paddingBottom: 12 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            {/* Next Prayer info */}
+            <View style={{ gap: 2 }}>
+              <View
+                style={{
+                  alignSelf: 'flex-start',
+                  paddingHorizontal: 8,
+                  paddingVertical: 2,
+                  borderRadius: 6,
+                  backgroundColor: t.goldSoft,
+                }}>
+                <Txt size={11} weight={700} color={t.goldInk}>
+                  الصلاة القادمة
+                </Txt>
+              </View>
+
+              {pr.next ? (
+                <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 10, marginTop: 4 }}>
                   <Txt font="display" size={28} weight={700} lh={1.3}>
                     {pr.next.name}
                   </Txt>
-                  <Txt size={20} weight={500} ltr>
+                  <Txt size={22} weight={700} color={t.primary} ltr>
                     {pr.next.time}
                   </Txt>
                 </View>
-                <Txt size={14} color={t.muted}>
-                  {pr.next.left}
+              ) : (
+                <Txt size={15} color={t.muted} lh={1.7}>
+                  حدّد موقعك لعرض المواقيت
                 </Txt>
-              </>
-            ) : (
-              <Txt size={15} color={t.muted} lh={1.7}>
-                حدّد موقعك لعرض المواقيت
-              </Txt>
+              )}
+            </View>
+
+            {/* Live Seconds Digital Countdown */}
+            {pr.next && (
+              <View
+                style={{
+                  alignItems: 'center',
+                  backgroundColor: dark ? '#0A1C16' : '#EBF6F1',
+                  borderWidth: 1.5,
+                  borderColor: gc,
+                  borderRadius: r(14),
+                  paddingVertical: 6,
+                  paddingHorizontal: 12,
+                  gap: 2,
+                }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                  <Icon d={ICON.clock} size={13} color={gc} sw={2} />
+                  <Txt size={11} weight={600} color={t.goldInk}>
+                    متبقٍ للأذان
+                  </Txt>
+                </View>
+                <Txt
+                  size={19}
+                  weight={700}
+                  color={dark ? '#34D399' : '#047857'}
+                  ltr
+                  style={{ letterSpacing: 1.2 }}>
+                  {pr.next.countdown.formatted}
+                </Txt>
+              </View>
             )}
           </View>
-          <View style={{ gap: 6, alignItems: 'flex-end' }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <Txt size={14} weight={700} color={t.primary}>
-                الأذكار والقبلة
+
+          {/* Interval Progress Bar */}
+          {pr.next && (
+            <View style={{ marginTop: 12, gap: 6 }}>
+              <View
+                style={{
+                  height: 5,
+                  width: '100%',
+                  borderRadius: 2.5,
+                  backgroundColor: dark ? '#18362D' : '#E2EBE6',
+                  overflow: 'hidden',
+                }}>
+                <View
+                  style={{
+                    height: '100%',
+                    width: `${pr.next.countdown.progressPct}%`,
+                    backgroundColor: gc,
+                    borderRadius: 2.5,
+                  }}
+                />
+              </View>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <Txt size={11} color={t.muted}>
+                  {pr.prev ? `السابقة: ${pr.prev.name} (${pr.prev.time})` : 'الفجر'}
+                </Txt>
+                <Txt size={11} weight={600} color={t.goldInk}>
+                  {pr.next.countdown.arabic}
+                </Txt>
+                <Txt size={11} color={t.muted}>
+                  {`القادمة: ${pr.next.name}`}
+                </Txt>
+              </View>
+            </View>
+          )}
+
+          {/* 5 Daily Prayers Pill Strip */}
+          {pr.times && (
+            <View
+              style={{
+                flexDirection: 'row',
+                gap: 6,
+                marginTop: 12,
+                paddingTop: 12,
+                borderTopWidth: 1,
+                borderTopColor: dark ? '#162F27' : '#E6EFEA',
+              }}>
+              {pr.times
+                .filter((p) => p.name !== 'الشروق')
+                .map((p) => {
+                  const isDone = !!pr.prayed[p.name];
+                  const isNext = pr.next?.name === p.name;
+                  return (
+                    <View
+                      key={p.name}
+                      style={{
+                        flex: 1,
+                        paddingVertical: 6,
+                        paddingHorizontal: 2,
+                        borderRadius: r(10),
+                        alignItems: 'center',
+                        gap: 2,
+                        backgroundColor: isNext
+                          ? dark
+                            ? '#173D32'
+                            : '#D6EFE5'
+                          : isDone
+                            ? dark
+                              ? '#0D261E'
+                              : '#E8F5F0'
+                            : t.soft,
+                        borderWidth: isNext ? 1.5 : 1,
+                        borderColor: isNext ? t.primary : isDone ? (dark ? '#1B473A' : '#C4E1D4') : t.line,
+                      }}>
+                      <Txt
+                        size={12}
+                        weight={isNext ? 700 : 600}
+                        color={isNext ? t.primary : isDone ? (dark ? '#34D399' : '#059669') : t.ink}>
+                        {p.name}
+                      </Txt>
+                      <Txt size={10} color={t.muted} ltr>
+                        {p.time.replace(/\s[صم]/, '')}
+                      </Txt>
+                      <View
+                        style={{
+                          width: 14,
+                          height: 14,
+                          borderRadius: 7,
+                          backgroundColor: isDone ? '#10B981' : isNext ? gc : 'transparent',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                          marginTop: 2,
+                        }}>
+                        {isDone ? (
+                          <Txt size={9} weight={700} color="#FFFFFF">
+                            ✓
+                          </Txt>
+                        ) : isNext ? (
+                          <View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: '#FFFFFF' }} />
+                        ) : (
+                          <View
+                            style={{
+                              width: 6,
+                              height: 6,
+                              borderRadius: 3,
+                              backgroundColor: dark ? '#2A4D41' : '#CBD5E1',
+                            }}
+                          />
+                        )}
+                      </View>
+                    </View>
+                  );
+                })}
+            </View>
+          )}
+
+          {/* Quick Shortcuts Footer */}
+          <View
+            style={{
+              flexDirection: 'row',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              marginTop: 12,
+              paddingTop: 10,
+              borderTopWidth: 1,
+              borderTopColor: dark ? '#162F27' : '#E6EFEA',
+            }}>
+            <Press
+              onPress={() => router.push('/prayer/qibla' as any)}
+              label="بوصلة القبلة"
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 5,
+                paddingVertical: 5,
+                paddingHorizontal: 10,
+                borderRadius: 8,
+                backgroundColor: t.soft,
+              }}>
+              <Icon d={ICON.compass} size={14} color={t.primary} sw={2} />
+              <Txt size={12} weight={600} color={t.primary}>
+                بوصلة القبلة
               </Txt>
-              <Icon d={ICON.forward} size={16} color={t.primary} sw={2.2} directional />
-            </View>
-            <View style={{ flexDirection: 'row', gap: 4 }}>
-              {['الفجر', 'الظهر', 'العصر', 'المغرب', 'العشاء'].map((n) => (
-                <View key={n} style={{ width: 10, height: 10, borderRadius: 5, backgroundColor: pr.prayed[n] ? t.primary : t.line }} />
-              ))}
-            </View>
+            </Press>
+
+            <Press
+              onPress={() => router.push('/prayer' as any)}
+              label="الأذكار والمواقيت"
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 5,
+                paddingVertical: 5,
+                paddingHorizontal: 10,
+                borderRadius: 8,
+                backgroundColor: t.goldSoft,
+              }}>
+              <Icon d={ICON.sparkle} size={14} color={t.goldInk} sw={2} />
+              <Txt size={12} weight={700} color={t.goldInk}>
+                الأذكار والمواقيت
+              </Txt>
+              <Icon d={ICON.forward} size={12} color={t.goldInk} sw={2.2} directional />
+            </Press>
           </View>
         </View>
       </Card>
+
+      {/* Tawheed Gateways Banner */}
+      <Card
+        variant="app"
+        pad={14}
+        onPress={() => router.push('/tawheed' as any)}
+        label="بوابات التوحيد واليقين"
+        style={{
+          borderWidth: 1.5,
+          borderColor: gc,
+          backgroundColor: dark ? '#132821' : '#F6FAF8',
+        }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 22,
+              backgroundColor: 'rgba(197, 155, 39, 0.18)',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}>
+            <Icon d={ICON.star8} size={24} color={gc} />
+          </View>
+          <View style={{ flex: 1, gap: 2 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+              <Txt size={12} weight={700} color={gc}>
+                المنهج الحق وأدلة الطائفة المنصورة
+              </Txt>
+              <Txt size={11} weight={700} color={gc}>
+                {completedTawheed}/7 بوابات
+              </Txt>
+            </View>
+            <Txt size={16} weight={700} color={t.ink}>
+              بوابات التوحيد واليقين
+            </Txt>
+            <Txt size={13} color={t.muted}>
+              أصول العقيدة، التحاكم لشرع الله، ودحض الشبهات
+            </Txt>
+          </View>
+          <Icon d={ICON.forward} size={18} color={gc} sw={2.2} directional />
+        </View>
+      </Card>
+
+      {/* Quick Guide Card — كيف تستفيد من بصيرة */}
+      <Card
+        variant="app"
+        pad={14}
+        onPress={() => router.push('/guide' as any)}
+        label="دليل بصيرة الإيماني"
+        style={{
+          borderWidth: 1,
+          borderColor: t.line,
+          backgroundColor: dark ? '#18241F' : '#F8FAF9',
+        }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View
+            style={{
+              width: 40,
+              height: 40,
+              borderRadius: 20,
+              backgroundColor: t.goldSoft,
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}>
+            <Icon d={ICON.compass} size={20} color={gc} />
+          </View>
+          <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+              <Txt size={11} weight={700} color={gc}>
+                خريطة الطريق والرحلة
+              </Txt>
+              <Txt size={11} color={t.muted}>
+                دليل تفاعلي
+              </Txt>
+            </View>
+            <Txt size={15} weight={700} color={t.ink}>
+              كيف تستفيد من تطبيق «بصيرة»؟
+            </Txt>
+            <Txt size={12} color={t.muted} numberOfLines={1}>
+              تعرف على التدرج السليم بين تثبيت العقيدة، وطلب العلم، والعبادة اليومية
+            </Txt>
+          </View>
+          <Icon d={ICON.forward} size={16} color={gc} sw={2.2} directional />
+        </View>
+      </Card>
+
 
       {/* Plan + review */}
       <View style={{ flexDirection: 'row', gap: 12 }}>
@@ -283,7 +621,7 @@ export default function Home() {
 
       {/* Quotes */}
       <View>
-        <SectionHeader title="من أقوال العلماء" actions={[{ label: 'عرض الكل', onPress: () => router.navigate('/quotes') }]} />
+        <SectionHeader title="من أقوال العلماء" actions={[{ label: 'قول آخر ↻', onPress: () => setMinuteTick((prev) => prev + 1) }, { label: 'عرض الكل', onPress: () => router.navigate('/quotes') }]} />
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -20 }} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 4, gap: 12 }}>
           {homeQuotes.map((q) => {
             const ver = isVerifiedQuote(q);

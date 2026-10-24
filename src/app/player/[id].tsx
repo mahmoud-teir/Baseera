@@ -2,6 +2,7 @@
 import { useLocalSearchParams } from 'expo-router';
 import { View } from 'react-native';
 
+import { PlayGlyph } from '@/components/core/PlayGlyph';
 import { Button } from '@/components/core/Button';
 import { Card } from '@/components/core/Card';
 import { ChoiceChips } from '@/components/core/parts';
@@ -114,9 +115,7 @@ export default function Player() {
           </Txt>
         </Press>
         <Press onPress={play} disabled={!canPlay} label={playing ? 'إيقاف مؤقت' : 'تشغيل'} style={{ width: 68, height: 68, borderRadius: 34, backgroundColor: t.btn, alignItems: 'center', justifyContent: 'center', opacity: canPlay ? 1 : 0.5 }}>
-          <Txt size={22} color={t.btnText}>
-            {playing ? '❚❚' : '▶'}
-          </Txt>
+          <PlayGlyph playing={playing} size={19} color={t.btnText} />
         </Press>
         <Press onPress={() => seekBy(15)} disabled={!playing} label="تقديم 15 ثانية" style={{ minWidth: 48, minHeight: 44, alignItems: 'center', justifyContent: 'center', opacity: playing ? 1 : 0.5 }}>
           <Txt size={15} color={t.muted}>

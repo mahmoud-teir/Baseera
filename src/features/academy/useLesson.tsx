@@ -4,18 +4,27 @@ import { View } from 'react-native';
 import { Skeleton, EmptyState } from '@/components/core/parts';
 import { BackLink, Screen, Title } from '@/components/layout/Screen';
 import { lessonByCode, lessonsFor, type Lesson } from '@/data/content';
-import { SUBJECTS, type Subject } from '@/data/structural';
+import { DEFAULT_STAGE3_LESSONS } from '@/data/stage3Lessons';
+import { ALL_SUBJECTS, SUBJECTS, type Subject } from '@/data/structural';
 import { useContent } from '@/state/content-store';
 
 export function useLesson(code: string | undefined): { lesson: Lesson | undefined; siblings: Lesson[]; subject: Subject; loading: boolean } {
   const lessons = useContent((s) => s.lessons);
   const status = useContent((s) => s.status);
-  const subject = SUBJECTS.find((s) => (code ?? '').startsWith(s.prefix + '-')) ?? SUBJECTS[0];
+  const subject = ALL_SUBJECTS.find((s) => (code ?? '').startsWith(s.prefix + '-')) ?? SUBJECTS[0];
+  let lesson = lessonByCode(lessons, code ?? '');
+  if (!lesson) {
+    lesson = DEFAULT_STAGE3_LESSONS.find((l) => l.code === (code ?? ''));
+  }
+  let siblings = lessonsFor(lessons, subject.prefix);
+  if (!siblings.length) {
+    siblings = DEFAULT_STAGE3_LESSONS.filter((l) => l.code.startsWith(subject.prefix + '-'));
+  }
   return {
-    lesson: lessonByCode(lessons, code ?? ''),
-    siblings: lessonsFor(lessons, subject.prefix),
+    lesson,
+    siblings,
     subject,
-    loading: !lessons.length && (status === 'idle' || status === 'loading'),
+    loading: !lesson && !lessons.length && (status === 'idle' || status === 'loading'),
   };
 }
 

@@ -21,6 +21,7 @@ import {
   SectionsDataSchema,
   TafsirDataSchema,
   TajweedDataSchema,
+  QuranVocabItemSchema,
   type AdhkarData,
   type DrillData,
   type Evidence,
@@ -29,6 +30,7 @@ import {
   type PageData,
   type PathData,
   type Quote,
+  type QuranVocabItem,
   type SectionsData,
   type TafsirData,
   type TajweedData,
@@ -43,9 +45,10 @@ export const LibraryItemSchema = z.object({
   title: z.string(),
   author: z.string().nullable().default(null),
   source: z.string().nullable().default(null),
+  url: z.string().optional(),
   chapters: z.array(ChapterSchema).default([]),
   pages: z.number().int().positive().nullable().default(null),
-  audio_url: z.string().url().startsWith('https://').nullable().default(null),
+  audio_url: z.string().url().startsWith('https://').nullable().optional().default(null),
   size_mb: z.number().nullable().default(null),
 });
 export type LibraryItem = z.infer<typeof LibraryItemSchema>;
@@ -53,6 +56,7 @@ export type LibraryItem = z.infer<typeof LibraryItemSchema>;
 export interface ContentSnapshot {
   lessons: Lesson[];
   quotes: Quote[];
+  vocab: QuranVocabItem[];
   library: LibraryItem[];
   stories: Record<string, SectionsData>;
   sharia: Record<string, SectionsData>;
@@ -64,7 +68,7 @@ export interface ContentSnapshot {
   pages: Record<string, PageData>;
 }
 
-export const EMPTY_CONTENT: ContentSnapshot = { lessons: [], quotes: [], library: [], stories: {}, sharia: {}, adhkar: {}, tajweed: {}, drill: null, paths: {}, map: {}, pages: {} };
+export const EMPTY_CONTENT: ContentSnapshot = { lessons: [], quotes: [], vocab: [], library: [], stories: {}, sharia: {}, adhkar: {}, tajweed: {}, drill: null, paths: {}, map: {}, pages: {} };
 
 export type Row = { id: string; kind: string; slot: string; data: unknown; sort?: number | null };
 
@@ -75,7 +79,7 @@ const parse = <T>(schema: z.ZodType<T>, v: unknown): T | null => {
 
 /** Build the app's content model from published rows. Invalid rows are skipped. */
 export function buildContent(rows: Row[]): ContentSnapshot {
-  const out: ContentSnapshot = { ...EMPTY_CONTENT, lessons: [], quotes: [], library: [], stories: {}, sharia: {}, adhkar: {}, tajweed: {}, paths: {}, map: {}, pages: {} };
+  const out: ContentSnapshot = { ...EMPTY_CONTENT, lessons: [], quotes: [], vocab: [], library: [], stories: {}, sharia: {}, adhkar: {}, tajweed: {}, paths: {}, map: {}, pages: {} };
   const evidence: Record<string, { n: number; e: Evidence }[]> = {};
   const sorted = [...rows].sort((a, b) => (a.sort ?? 0) - (b.sort ?? 0) || a.slot.localeCompare(b.slot));
   for (const r of sorted) {
@@ -94,6 +98,11 @@ export function buildContent(rows: Row[]): ContentSnapshot {
       case 'quote': {
         const q = parse(QuoteDataSchema, r.data);
         if (q) out.quotes.push({ id: r.slot, ...q });
+        break;
+      }
+      case 'vocab': {
+        const v = parse(QuranVocabItemSchema, r.data);
+        if (v) out.vocab.push(v);
         break;
       }
       case 'story':
@@ -134,7 +143,9 @@ export function buildContent(rows: Row[]): ContentSnapshot {
       }
       case 'book':
       case 'audio': {
-        const item = parse(LibraryItemSchema, { ...(r.data as object), id: r.id, kind: r.kind });
+        const d = (r.data as Record<string, unknown>) ?? {};
+        const itemId = (d.id as string) || r.slot || r.id;
+        const item = parse(LibraryItemSchema, { ...d, id: itemId, kind: r.kind });
         if (item) out.library.push(item);
         break;
       }

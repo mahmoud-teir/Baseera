@@ -74,6 +74,36 @@ export function specFor(kind: ContentKind, slot: string, L: Strings): Field[] {
         { key: 'scholar', type: 'text', label: f.scholar },
         { key: 'source', type: 'text', label: f.source },
       ];
+    case 'vocab':
+      return [
+        { key: 'word', type: 'text', label: 'الكلمة' },
+        { key: 'root', type: 'text', label: 'الجذر' },
+        { key: 'category', type: 'text', label: f.category },
+        { key: 'meaning', type: 'area', label: 'المعنى الجامع' },
+        {
+          key: 'ayahs',
+          type: 'repeat',
+          label: 'الآيات الشاهدة والتفسير',
+          fields: [
+            { key: 'surahName', type: 'text', label: 'السورة' },
+            { key: 'ayah', type: 'number', label: f.ayah, min: 1, max: 286 },
+            { key: 'text', type: 'area', label: f.text },
+            { key: 'tafsir', type: 'area', label: 'التفسير' },
+            { key: 'source', type: 'text', label: f.source },
+            { key: 'wajh', type: 'area', label: f.wajh },
+          ],
+        },
+        {
+          key: 'quotes',
+          type: 'repeat',
+          label: 'أقوال أئمة السلف',
+          fields: [
+            { key: 'scholar', type: 'text', label: f.scholar },
+            { key: 'text', type: 'area', label: f.text },
+            { key: 'source', type: 'text', label: f.source },
+          ],
+        },
+      ];
     case 'story': {
       const tab = slot.split('/')[0] as StoryTab;
       return [{ key: 'sections', type: 'keyed', label: f.sections, keys: opts(STORIES[tab]?.secs ?? []), fields: sourced }];
@@ -159,6 +189,8 @@ export function emptyData(kind: ContentKind, passPct = 85): Json {
       return { kind: 'quran', label: 'آية', text: '', source: '', ref: '' };
     case 'quote':
       return { cat: QUOTE_CATS[0], text: '', scholar: '', source: '' };
+    case 'vocab':
+      return { word: '', root: '', category: 'العقيدة', meaning: '', ayahs: [], quotes: [] };
     case 'story':
     case 'sharia':
       return { sections: {} };

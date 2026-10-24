@@ -1,5 +1,6 @@
 /** A published, sourced section (stories, encyclopedia) — or the «بانتظار التوثيق» slot while none is published. */
 import type { ReactNode } from 'react';
+import { View } from 'react-native';
 
 import { Card } from '@/components/core/Card';
 import { EvidenceActions, PendingSlot } from '@/components/core/parts';
@@ -25,6 +26,26 @@ export function SourcedSection({ heading, data, where, pending, actions }: { hea
             {data.source}
             {data.ref ? ` · ${data.ref}` : ''}
           </Txt>
+          {data.explain ? (
+            <View style={{ backgroundColor: t.soft, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12 }}>
+              <Txt size={13} color={t.primary} lh={1.7}>
+                <Txt size={13} weight={700} color={t.primary}>
+                  شرح المسألة:{' '}
+                </Txt>
+                {data.explain}
+              </Txt>
+            </View>
+          ) : null}
+          {data.wajh ? (
+            <View style={{ backgroundColor: t.goldSoft, borderRadius: 10, paddingVertical: 8, paddingHorizontal: 12 }}>
+              <Txt size={13} color={t.goldInk} lh={1.7}>
+                <Txt size={13} weight={700} color={t.goldInk}>
+                  وجه الاستدلال:{' '}
+                </Txt>
+                {data.wajh}
+              </Txt>
+            </View>
+          ) : null}
         </>
       ) : (
         <PendingSlot>{pending}</PendingSlot>

@@ -77,6 +77,28 @@ export async function updatePassword(password: string): Promise<Result> {
   return error ? { ok: false, error: arabicError(error.message) } : { ok: true, message: 'تم تغيير كلمة المرور.' };
 }
 
+/** Re-authenticates with currentPassword before setting newPassword. */
+export async function changePassword(currentPassword: string, newPassword: string): Promise<Result> {
+  if (!supabase) return UNAVAILABLE;
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user?.email) return { ok: false, error: 'لم يتم العثور على جلسة نشطة.' };
+
+  // Verify the current password first
+  const { error: signInErr } = await supabase.auth.signInWithPassword({
+    email: user.email,
+    password: currentPassword,
+  });
+  if (signInErr) {
+    return { ok: false, error: 'كلمة المرور الحالية غير صحيحة.' };
+  }
+
+  // Update to the new password
+  const { error: updateErr } = await supabase.auth.updateUser({
+    password: PasswordSchema.parse(newPassword),
+  });
+  return updateErr ? { ok: false, error: arabicError(updateErr.message) } : { ok: true, message: 'تم تغيير كلمة المرور بنجاح.' };
+}
+
 export async function signOut(scope: 'local' | 'others' = 'local'): Promise<Result> {
   if (!supabase) return UNAVAILABLE;
   const { error } = await supabase.auth.signOut({ scope });

@@ -13,6 +13,8 @@ export interface Track {
   title: string;
   uri: string;
   artist?: string;
+  album?: string;
+  artworkUrl?: string;
   /** Free-form tag, e.g. { surah, ayah } for recitation tracking. */
   meta?: Record<string, number | string>;
 }
@@ -90,6 +92,7 @@ function handleFinish() {
     loadIndex(st.index + 1, true);
     return;
   }
+  try { player?.clearLockScreenControls(); } catch {}
   useAudio.setState({ playing: false, position: 0 });
 }
 
@@ -104,7 +107,8 @@ function loadIndex(i: number, autoplay: boolean) {
     p.setPlaybackRate(st.rate);
     if (Platform.OS !== 'web') {
       try {
-        p.setActiveForLockScreen(true, { title: tr.title, artist: tr.artist ?? 'بصيرة' }, { showSeekBackward: true, showSeekForward: true });
+        const artwork = tr.artworkUrl || 'https://images.unsplash.com/photo-1609599006353-e629aaabfeae?auto=format&fit=crop&w=600&q=80';
+        p.setActiveForLockScreen(true, { title: tr.title, artist: tr.artist ?? 'بصيرة', albumTitle: tr.album ?? 'تطبيق بصيرة — تلاوة القرآن الكريم', artworkUrl: artwork }, { showSeekBackward: true, showSeekForward: true, showNextTrack: true, showPreviousTrack: true });
       } catch {
         // lock screen controls are best-effort
       }
@@ -147,7 +151,10 @@ export function pause() {
 }
 
 export function stop() {
-  player?.pause();
+  try {
+    player?.pause();
+    player?.clearLockScreenControls();
+  } catch {}
   useAudio.setState({ playing: false, queue: [], index: 0, position: 0, duration: 0 });
 }
 

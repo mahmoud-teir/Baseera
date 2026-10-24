@@ -8,11 +8,11 @@ import { z } from 'zod';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
-import { SUBJECTS } from '@/data/structural';
+import { ALL_SUBJECTS, SUBJECTS } from '@/data/structural';
 import { supabase } from '@/services/supabase';
 
 export const PrayerConfigSchema = z.object({
-  method: z.enum(['Muslim World League', 'Umm al-Qura', 'Egyptian General Authority', 'Karachi', 'ISNA']),
+  method: z.enum(['Automatic', 'Muslim World League', 'Umm al-Qura', 'Egyptian General Authority', 'Karachi', 'ISNA']),
   hijriAdj: z.number().int().min(-2).max(2),
   notifications: z.boolean(),
   highLatitude: z.boolean(),
@@ -20,10 +20,11 @@ export const PrayerConfigSchema = z.object({
 });
 export type PrayerConfig = z.infer<typeof PrayerConfigSchema>;
 
-export const PRAYER_CONFIG_DEFAULTS: PrayerConfig = { method: 'Muslim World League', hijriAdj: 0, notifications: true, highLatitude: false, dst: true };
+export const PRAYER_CONFIG_DEFAULTS: PrayerConfig = { method: 'Automatic', hijriAdj: 0, notifications: true, highLatitude: false, dst: true };
 
 /** Console method names → the app's calculation-method setting values. */
 export const METHOD_LABEL: Record<PrayerConfig['method'], string> = {
+  Automatic: 'تلقائي حسب البلد',
   'Muslim World League': 'رابطة العالم الإسلامي',
   'Umm al-Qura': 'أم القرى',
   'Egyptian General Authority': 'الهيئة المصرية',
@@ -37,7 +38,11 @@ export type Curriculum = z.infer<typeof CurriculumSchema>;
 export const CURRICULUM_DEFAULTS: Curriculum = { stage1: Object.fromEntries(SUBJECTS.map((s) => [s.id, s.count])), passPct: 85 };
 
 /** Planned lesson count for a subject and for the whole of stage 1. */
-export const plannedCount = (c: Curriculum, subjectId: string) => c.stage1[subjectId] ?? 0;
+export const plannedCount = (c: Curriculum, subjectId: string) => {
+  const custom = c.stage1?.[subjectId];
+  if (typeof custom === 'number') return custom;
+  return ALL_SUBJECTS.find((s) => s.id === subjectId)?.count ?? 0;
+};
 export const stage1Total = (c: Curriculum) => SUBJECTS.reduce((a, s) => a + plannedCount(c, s.id), 0);
 
 interface ConfigState {

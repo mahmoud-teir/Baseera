@@ -1,10 +1,11 @@
+import { surah } from '@/data/quran';
 /**
  * Local notifications (native only): prayer times, adhkar reminders and the daily lesson,
  * driven by the settings toggles (تنبيهات الصلاة، تذكير الأذكار، تذكير الدرس اليومي / الإشعارات).
  * Everything is scheduled on the device from the computed prayer times — no push server needed.
  */
 import * as Notifications from 'expo-notifications';
-import { AndroidImportance } from 'expo-notifications';
+import { AndroidAudioContentType, AndroidAudioUsage, AndroidImportance, AndroidNotificationVisibility } from 'expo-notifications';
 import { useEffect } from 'react';
 import { Platform } from 'react-native';
 
@@ -15,6 +16,7 @@ import { useApp } from '@/state/app-store';
 import { useConfig } from '@/state/config-store';
 
 import { toHijri } from './hijri';
+import { placeOf } from './location';
 import { prayerTimesFor } from './prayer';
 import { supabase } from './supabase';
 
@@ -37,8 +39,27 @@ export async function ensurePermission(): Promise<boolean> {
 
 async function ensureChannels() {
   if (Platform.OS !== 'android') return;
-  await Notifications.setNotificationChannelAsync('prayer', { name: 'مواقيت الصلاة', importance: AndroidImportance.HIGH });
-  await Notifications.setNotificationChannelAsync('reminders', { name: 'التذكيرات', importance: AndroidImportance.DEFAULT });
+  await Notifications.setNotificationChannelAsync('prayer_alarm', {
+    name: 'أذان مواقيت الصلاة (منبه يصدح في الصامت)',
+    importance: AndroidImportance.MAX,
+    sound: 'adhan_makkah.mp3',
+    audioAttributes: {
+      usage: AndroidAudioUsage.ALARM,
+      contentType: AndroidAudioContentType.SONIFICATION,
+      flags: { enforceAudibility: true, requestHardwareAudioVideoSynchronization: false },
+    },
+    bypassDnd: true,
+    lockscreenVisibility: AndroidNotificationVisibility.PUBLIC,
+    vibrationPattern: [0, 500, 250, 500],
+  });
+  await Notifications.setNotificationChannelAsync('prayer', {
+    name: 'مواقيت الصلاة (تنبيه عادي)',
+    importance: AndroidImportance.HIGH,
+  });
+  await Notifications.setNotificationChannelAsync('reminders', {
+    name: 'التذكيرات والورد اليومي',
+    importance: AndroidImportance.HIGH,
+  });
 }
 
 const DAYS_AHEAD = 5;
@@ -51,18 +72,24 @@ export async function rescheduleAll(): Promise<{ scheduled: number; reason?: str
   await Notifications.cancelAllScheduledNotificationsAsync();
   const wantPrayer = get('prayNotif');
   const wantAdhkar = get('adhkarRem');
+  const wantQuran = get('quranRem');
   const wantDaily = get('dailyRem') && get('nDaily');
   const wantSeason = get('nSeason');
-  if (!wantPrayer && !wantAdhkar && !wantDaily && !wantSeason) return { scheduled: 0 };
+  if (!wantPrayer && !wantAdhkar && !wantQuran && !wantDaily && !wantSeason) return { scheduled: 0 };
   if (!(await ensurePermission())) return { scheduled: 0, reason: 'permission' };
   await ensureChannels();
 
   const now = Date.now();
   let count = 0;
-  const at = async (date: Date, title: string, body: string, channelId: string) => {
+  const at = async (date: Date, title: string, body: string, channelId: string, url?: string, sound?: string) => {
     if (date.getTime() <= now) return;
     await Notifications.scheduleNotificationAsync({
-      content: { title, body },
+      content: {
+        title,
+        body,
+        sound: sound ?? (channelId === 'prayer_alarm' ? 'adhan_makkah.mp3' : undefined),
+        data: url ? { url } : undefined,
+      },
       trigger: { type: Notifications.SchedulableTriggerInputTypes.DATE, date, channelId },
     });
     count++;
@@ -73,19 +100,74 @@ export async function rescheduleAll(): Promise<{ scheduled: number; reason?: str
   for (let i = 0; i < DAYS_AHEAD; i++) {
     const day = new Date();
     day.setDate(day.getDate() + i);
+
     if (loc && (wantPrayer || wantAdhkar)) {
-      const { times } = prayerTimesFor(loc.lat, loc.lon, day, settings);
+      const { times } = prayerTimesFor(loc.lat, loc.lon, day, settings, undefined, placeOf(loc));
       for (const p of times) {
         if (p.name === 'الشروق') continue;
-        if (wantPrayer) await at(p.at, `حان وقت صلاة ${p.name}`, loc.label ? `حسب موقعك: ${loc.label}` : 'حسب موقعك', 'prayer');
+        if (wantPrayer) {
+          await at(
+            p.at,
+            `حان وقت صلاة ${p.name} 🕌`,
+            loc.label ? `الله أكبر، الله أكبر · حسب موقعك: ${loc.label}` : 'الله أكبر، الله أكبر · الصلاة خير من النوم',
+            'prayer_alarm',
+            '/prayer'
+          );
+        }
       }
       if (wantAdhkar) {
         const fajr = times[0].at;
         const asr = times[3].at;
-        await at(new Date(fajr.getTime() + 20 * 60000), 'أذكار الصباح', 'خصّص دقائق لأذكار الصباح.', 'reminders');
-        await at(new Date(asr.getTime() + 20 * 60000), 'أذكار المساء', 'خصّص دقائق لأذكار المساء.', 'reminders');
+        await at(
+          new Date(fajr.getTime() + 25 * 60000),
+          'أذكار الصباح ☀️',
+          '«أصبحنا وأصبح الملك لله والحمد لله» · ابدأ يومك بذكر الله وحصنه.',
+          'reminders',
+          '/prayer/adhkar/morning'
+        );
+        await at(
+          new Date(asr.getTime() + 20 * 60000),
+          'أذكار المساء 🌙',
+          '«أمسينا وأمسى الملك لله والحمد لله» · حصّن نفسك بأذكار المساء.',
+          'reminders',
+          '/prayer/adhkar/evening'
+        );
+      }
+    } else if (wantAdhkar) {
+      // موعد بديل لأذكار الصباح والمساء في حال عدم تفعيل الموقع
+      const mD = new Date(day);
+      mD.setHours(6, 30, 0, 0);
+      await at(mD, 'أذكار الصباح ☀️', '«أصبحنا وأصبح الملك لله والحمد لله» · ابدأ يومك بذكر الله.', 'reminders', '/prayer/adhkar/morning');
+      const eD = new Date(day);
+      eD.setHours(17, 0, 0, 0);
+      await at(eD, 'أذكار المساء 🌙', '«أمسينا وأمسى الملك لله والحمد لله» · حصّن نفسك بأذكار المساء.', 'reminders', '/prayer/adhkar/evening');
+    }
+
+    // تذكير الورد القرآني اليومي
+    if (wantQuran) {
+      const qD = new Date(day);
+      qD.setHours(20, 30, 0, 0); // 8:30 PM
+      const lr = st.lastRead;
+      if (lr) {
+        const sMeta = surah(lr.surah);
+        await at(
+          qD,
+          'وردك القرآني اليوم 📖',
+          `«اقرأوا القرآن فإنه يأتي يوم القيامة شفيعاً لأصحابه» · تابع من سورة ${sMeta.name} (الآية ${lr.ayah}).`,
+          'reminders',
+          `/reader/${lr.surah}?ayah=${lr.ayah}`
+        );
+      } else {
+        await at(
+          qD,
+          'وردك القرآني اليوم 📖',
+          '«اقرأوا القرآن فإنه يأتي يوم القيامة شفيعاً لأصحابه» · خصّص وقتاً لتلاوة وردك اليومي.',
+          'reminders',
+          '/quran'
+        );
       }
     }
+
     if (wantDaily) {
       const d = new Date(day);
       d.setHours(20, 0, 0, 0);

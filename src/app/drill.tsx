@@ -6,6 +6,7 @@ import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import { View } from 'react-native';
 
+import { PlayGlyph } from '@/components/core/PlayGlyph';
 import { Button } from '@/components/core/Button';
 import { Press } from '@/components/core/Press';
 import { Txt } from '@/components/core/Txt';
@@ -53,9 +54,7 @@ export default function Drill() {
       </View>
       <View style={{ height: 150, borderRadius: r(22), backgroundColor: pc, alignItems: 'center', justifyContent: 'center', gap: 10 }}>
         <Press onPress={play} label={playing ? 'إيقاف المقطع' : 'تشغيل المقطع'} style={{ width: 56, height: 56, borderRadius: 28, backgroundColor: '#FAF8F2', alignItems: 'center', justifyContent: 'center' }}>
-          <Txt size={18} color={pc}>
-            {playing ? '❚❚' : '▶'}
-          </Txt>
+          <PlayGlyph playing={playing} size={15} color={pc} />
         </Press>
         <Txt size={14} color="#CFE0DA" align="center" style={{ paddingHorizontal: 16 }}>
           {q.source}

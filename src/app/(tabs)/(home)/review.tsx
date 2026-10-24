@@ -7,9 +7,11 @@ import { View } from 'react-native';
 
 import { Button } from '@/components/core/Button';
 import { Card } from '@/components/core/Card';
+import { Icon } from '@/components/core/Icon';
 import { Txt } from '@/components/core/Txt';
-import { BackLink, Screen, Title } from '@/components/layout/Screen';
+import { RoundBackHeader, Screen } from '@/components/layout/Screen';
 import { lessonByCode } from '@/data/content';
+import { ICON } from '@/data/structural';
 import { dueSrsCards, useApp } from '@/state/app-store';
 import { useContent } from '@/state/content-store';
 import { useTheme } from '@/theme/theme';
@@ -44,8 +46,19 @@ export default function Review() {
   const done = i >= session.length || !qa;
   return (
     <Screen gap={16} padBottom={28}>
-      <BackLink label="الرئيسية" href="/" />
-      <Title>راجع ما أخطأت فيه</Title>
+      <RoundBackHeader
+        title="راجع ما أخطأت فيه"
+        href="/"
+        size={26}
+        right={
+          <View style={{ width: 44, height: 44, borderRadius: 22, backgroundColor: t.goldSoft, alignItems: 'center', justifyContent: 'center' }}>
+            <Icon d={ICON.sync} size={22} color={t.goldInk} sw={2.2} />
+          </View>
+        }
+      />
+      <Txt size={14} color={t.muted} lh={1.6} style={{ marginTop: -4, paddingBottom: 4 }}>
+        نظام التكرار المتباعد لتثبيت المسائل والأسئلة غير المتقنة
+      </Txt>
       {done ? (
         <Card variant="app" radius={24} pad={0} style={{ paddingVertical: 28, paddingHorizontal: 20, alignItems: 'center', gap: 12 }}>
           <Txt font="display" size={28} weight={700} align="center">

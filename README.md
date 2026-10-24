@@ -5,6 +5,7 @@
 <a href="#"><img src="https://readme-typing-svg.demolab.com?font=IBM+Plex+Sans+Arabic&weight=600&size=20&duration=3200&pause=900&color=145C4B&center=true&vCenter=true&width=640&lines=One+codebase+%E2%86%92+Web+%C2%B7+iOS+%C2%B7+Android;Full+Arabic+%2F+RTL+from+the+first+frame;Nothing+is+shown+before+it+is+verified" alt="Typing summary" /></a>
 
 <p>
+  <img src="https://img.shields.io/badge/Version-v1.1.0-145C4B?style=for-the-badge&logo=android&logoColor=white" alt="Version 1.1.0" />
   <img src="https://img.shields.io/badge/Expo-SDK%2058-000020?style=for-the-badge&logo=expo&logoColor=white" alt="Expo SDK 58" />
   <img src="https://img.shields.io/badge/React%20Native-0.88-61DAFB?style=for-the-badge&logo=react&logoColor=0E2A25" alt="React Native 0.88" />
   <img src="https://img.shields.io/badge/TypeScript-strict-3178C6?style=for-the-badge&logo=typescript&logoColor=white" alt="TypeScript strict" />
@@ -36,12 +37,14 @@
 
 ```yaml
 name: بصيرة · Baseerah
+version: 1.1.0 (versionCode 2)
 what: A free, ad-free Arabic (RTL) app for studying the Islamic sciences
 covers:
   - a staged academy with lessons, quizzes, certificates and spaced review
-  - the Quran (Tanzil Uthmani text) with per-ayah recitation and a memorisation coach
-  - a library, an encyclopedia, stories of the prophets and companions
-  - prayer times, Qibla (compass + map + 3D Kaaba), adhkar and the Hijri calendar
+  - the Quran (Tanzil Uthmani text) with per-ayah recitation, tafsir, and 604-page Madinah layout
+  - a comprehensive verified library (21 complete authentic books) & Islamic terms dictionary
+  - prayer times, Qibla (compass + map + 3D Kaaba), adhan audio, widget, adhkar & digital tasbeeh
+  - direct in-app auto-updater and native mobile admin console
 ships_to: [web, iOS, Android]          # one Expo + React Native + TypeScript codebase
 backend: Supabase                      # Postgres + row-level security, Auth, Edge Functions, Storage
 staff_console: /admin                  # write, review and publish every piece of content
@@ -51,6 +54,51 @@ golden_rule: >
   biography and encyclopedia entry stays a dashed «بانتظار التوثيق» slot until scholars
   approve it, with its source, in the console. The app ships no content and no sample data.
 ```
+
+---
+
+## ✨ What's New in v1.1.0 (أبرز الميزات والتحديثات)
+
+### 📚 1. المكتبة الإسلامية الشاملة الموثقة (21 كتاباً أصيلاً ومحققاً)
+تحميل وفهرسة 21 كتاباً من أمهات الكتب الإسلامية بالكامل وبنصوص محققة موثقة:
+- **العقيدة والتوحيد:** *الأصول الثلاثة وأدلتها*، *كتاب التوحيد*، *العقيدة الواسطية*.
+- **الحديث الشريف وشروحه:** *الأربعين النووية*، *عمدة الأحكام*، *بلوغ المرام*، *رياض الصالحين*، *جامع العلوم والحكم*.
+- **السيرة النبوية والشمائل:** *الرحيق المختوم*، *الشمائل المحمدية*، *سيرة ابن هشام*.
+- **التفسير وعلوم القرآن:** *تيسير الكريم الرحمن (تفسير السعدي)*، *تفسير ابن كثير (مختصر)*.
+- **علوم الحديث والمصطلح:** *مقدمة ابن الصلاح*، *المنظومة البيقونية*.
+- **الأذكار والتزكية والآداب:** *الأذكار للنووي*، *حلية طالب العلم*، *صيد الخاطر*، *مدارج السالكين*، *الداء والدواء (الجواب الكافي)*.
+- **التاريخ والتراجم:** *البداية والنهاية (مختصر)*.
+
+### 📖 2. معجم المصطلحات والمفاهيم الإسلامية (`/terms`)
+- أكثر من 46 مصطلحاً شرعياً مفصلاً بالأدلة والتأصيل من كتب أهل السنة.
+- تصفية سريعة ومبوبة حسب الأبواب: (عقيدة، فقه، حديث، أصول ومصطلح، تزكية وسلوك).
+
+### 📱 3. لوحة تحكم الهاتف الأصلية (Native Mobile Admin Console)
+- إعادة تصميم وبناء لوحة تحكم الإدارة بالكامل لتعمل من داخل الهاتف المحمول بأعلى معايير تجربة المستخدم المتجاوبة.
+- تطابق كامل مع هوية التطبيق البصرية (الزمردي والذهبي والأشكال الدائرية المريحة).
+- إدارة ومراجعة ونشر مسودات الدروس، الكتب، والمحتوى الموثق مباشرة من الجوال.
+
+### 🔄 4. نظام التحديث التلقائي المباشر (In-App Direct OTA Updater)
+- تنزيل وتثبيت تحديثات التطبيق بصيغة APK من داخل التطبيق دون وسيط وبشريط تقدم مباشر.
+- تكامل ذكي ومباشر مع مثبت حزم أندرويد (`Android Package Installer`) عبر Expo FileSystem `preview` مع منح أذونات القراءة الآمنة (`FLAG_GRANT_READ_URI_PERMISSION`).
+- إمكانية نشر وتوزيع التحديثات للمستخدمين مباشرة من لوحة التحكم السحابية.
+
+### 🕌 5. المصحف الشريف والتفاسير المطورة
+- مطابقة تامة لتقسيم مصحف المدينة المنورة (604 صفحات) مع القراءة والتلاوة الصوتية آية بآية.
+- محرك تفاسير متكامل (تفسير السعدي، ابن كثير، التفسير الميسر) مع التخزين المؤقت المحلي.
+- معجم مفردات غريب القرآن الكريم (`/quran/vocab`).
+- منظم الختمات وسجل القراءة اليومي.
+
+### ⏱️ 6. مواقيت الصلاة، أصوات المؤذنين، وودجت الشاشة الرئيسية
+- ودجت أصلي لشاشة الهاتف الرئيسية (Android Home Screen Widget) يعرض مواقيت الصلاة والصلاة القادمة.
+- تحديد تلقائي لطريقة حساب المواقيت بناءً على الموقع الجغرافي الدقيق.
+- مكتبة أصوات مؤذنين نقيّة مع إمكانية المعاينة والاختيار.
+- بوصلة القبلة التفاعلية ومجسم ثلاثي الأبعاد 3D تفاعلي للكعبة المشرفة.
+
+### 📿 7. المسبحة الإلكترونية الذكية والأذكار (`/tasbeeh`)
+- مسبحة إلكترونية بأصوات واهتزازات لمسية (Haptic Feedback) واقعية ومؤشرات تقدم ذكية.
+- معالجة تداخل العدادات وتجاوب شاشات الهواتف بكفاءة عالية.
+- أسماء الله الحسنى بشروحها وأدلتها، وأدعية وسنن نبوية مصنفة.
 
 ## 🧰 Tools and tech
 
@@ -74,22 +122,26 @@ golden_rule: >
 | Motion | Reanimated 4: worklet timelines, CSS transitions, layout keyframes |
 | State | zustand, persisted to AsyncStorage (local-first) |
 | Validation | zod (the same content schemas in the app and the console) |
-| Quran | Tanzil Uthmani text v1.1 (verbatim `.txt` asset), EveryAyah per-ayah recitation |
+| Quran | Tanzil Uthmani text v1.1 (verbatim `.txt` asset), EveryAyah per-ayah recitation, 604-page Madinah layout |
+| Tafsir | Multi-engine (Al-Saadi, Ibn Kathir, Al-Muyassar) with offline caching |
 | Prayer / Hijri | `adhan` (astronomical), ICU `Intl` Umm al-Qura with an `@umalqura/core` fallback |
+| Android Widget | react-native-android-widget (live prayer times & next prayer countdown) |
+| OTA Updater | In-app APK downloader & installer via Expo FileSystem & Sharing (zero external browser redirect) |
 | Graphics | react-native-svg, d3-geo + world-atlas (Qibla map), three.js + react-three-fiber (Kaaba 3D) |
 | Backend | Supabase: Postgres + RLS, Auth, Edge Functions (Deno), Storage |
 | Tests | Jest + Testing Library, Playwright (web E2E), PGlite (SQL / RLS) |
 
 ```
 src/
-  app/            routes (tabs: home, academy, quran, library, account; full-screen flows; /admin console)
+  app/            routes (tabs: home, academy, quran, library, account; /admin console, /tawheed, /terms, /guide)
   components/     core (Button, Card, Chip, EvidenceBlock, LessonRow, ProgressBar, …), layout, overlays
-  features/       academy, admin (console), prayer, qibla, kaaba, intro, quran, library, plan, stories
-  services/       supabase, auth, sync, reports, audio, downloads, notifications, prayer, hijri, qibla
-  state/          app-store (persisted), content-store (published content cache), config-store, ui-store
-  data/           content.ts (content schemas), structural.ts (curriculum outline, names), quran/meta.json
+  features/       academy, admin (mobile dashboard & console), updater, prayer, qibla, kaaba, quran, library, tasbeeh
+  services/       supabase, auth, sync, updater, audio, muadhin, tafsir, notifications, prayer, hijri, qibla
+  state/          app-store (persisted), content-store (published content cache), config-store, tawheed-store
+  data/           libraryData (21 books), islamicTermsData (46 terms), stages, quran pages, structural, content
   theme/          tokens, fonts, theme provider, layout (breakpoints, RTL edges)
-assets/quran/     Tanzil text + metadata (CC BY 3.0, verbatim)
+  widgets/        Android home screen prayer widget task handler & views
+assets/           quran Tanzil text, audio (adhan, tasbeeh sounds), fonts, icons
 backend/supabase/ migrations, Edge Functions, config.toml (seed.sql is intentionally empty)
 tests/ e2e/ tools/
 ```
@@ -249,7 +301,8 @@ After that, admins add and change team members from the console (Roles & audit �
   <img src="docs/images/console-lessons.png" width="820" alt="Baseerah Console — lesson editor" />
 </div>
 
-This is the staff dashboard from `Baseerah Dashboard.dc.html`. It is reached from Settings → عن بصيرة → «لوحة بصيرة» (shown to staff only), or directly at `/admin`. On the web its code is a separate chunk that learners never download.
+This is the staff dashboard. It is reached from Settings → عن بصيرة → «لوحة بصيرة» (shown to staff only), or directly at `/admin`.
+On mobile devices, it automatically renders a bespoke **Native Mobile Admin Console** (`MobileAdminDashboard.tsx`) with seamless touch UX, fast review queues, and direct APK update publishing. On desktop/web, it renders the multi-panel staff dashboard. On the web its code is a separate chunk that learners never download.
 
 - **13 views:**
   - the design's 11: work queue, overview, lessons, evidence, library & audio, error reports, scholars, learners, certificates, prayer & calendar, and roles & audit;

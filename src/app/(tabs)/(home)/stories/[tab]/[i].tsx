@@ -6,6 +6,7 @@ import { Button } from '@/components/core/Button';
 import { Txt } from '@/components/core/Txt';
 import { BackLink, Screen } from '@/components/layout/Screen';
 import { STORIES, storySuffix, storyTitle, type StoryTab } from '@/data/structural';
+import { DEFAULT_STORIES } from '@/data/stories-defaults';
 import { SourcedSection } from '@/features/content/SourcedSection';
 import { Medallion } from '@/features/stories/Medallion';
 import { useContent } from '@/state/content-store';
@@ -25,6 +26,7 @@ export default function Story() {
   const { t, r } = useTheme();
   const go = (n: number) => router.setParams({ i: String(n) });
   const published = useContent((s) => s.stories[`${tab}/${i}`]);
+  const defaultStory = DEFAULT_STORIES[`${tab}/${i}`];
   return (
     <Screen gap={14}>
       <BackLink label={st.name} href={{ pathname: '/stories', params: { tab } }} />
@@ -43,7 +45,7 @@ export default function Story() {
         <SourcedSection
           key={s}
           heading={s}
-          data={published?.sections[s]}
+          data={published?.sections[s] ?? defaultStory?.sections[s]}
           where={`${storyTitle(tab, name)} · ${s}`}
           pending="يُدرج هنا بعد المراجعة العلمية، مع الدليل من الكتاب أو السنة الصحيحة والمرجع."
         />

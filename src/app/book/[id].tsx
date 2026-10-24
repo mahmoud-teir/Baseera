@@ -1,20 +1,21 @@
 /** قارئ الكتاب — `s.book`: font size, in-book search, highlight → دفتر الفوائد (with source), report, download, page progress. */
 import { useLocalSearchParams } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
-import { TextInput, View } from 'react-native';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ScrollView, TextInput, View } from 'react-native';
 
+import { Icon } from '@/components/core/Icon';
 import { ReportLink } from '@/components/core/parts';
 import { Press } from '@/components/core/Press';
 import { ProgressBar } from '@/components/core/ProgressBar';
 import { Txt } from '@/components/core/Txt';
 import { BackLink, Screen, Title, useTopPad } from '@/components/layout/Screen';
-import { BOOK_FS } from '@/theme/tokens';
+import { BOOK_CATEGORIES, ICON } from '@/data/structural';
 import { folderId, useLibraryItem } from '@/services/content';
-import { BOOK_CATEGORIES } from '@/data/structural';
 import { DOWNLOAD_ERRORS, downloadsSupported } from '@/services/downloads';
 import { useApp } from '@/state/app-store';
 import { useUi } from '@/state/ui-store';
 import { useTheme } from '@/theme/theme';
+import { BOOK_FS } from '@/theme/tokens';
 
 export default function Book() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -28,16 +29,65 @@ export default function Book() {
   const downloads = useApp((s) => s.downloads);
   const toggleDownload = useApp((s) => s.toggleDownload);
   const flash = useUi((s) => s.flash);
+  const openReport = useUi((s) => s.openReport);
+
+  const [searchOpen, setSearchOpen] = useState(false);
   const [q, setQ] = useState('');
+  const [activeHitIndex, setActiveHitIndex] = useState(0);
   const [hl, setHl] = useState<Record<string, boolean>>({});
   const [progress, setProgress] = useState(0);
+
+  const scrollRef = useRef<React.ComponentRef<typeof ScrollView>>(null);
+  const paraOffsets = useRef<Record<string, number>>({});
+  const saveProgressTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const sepia = rt === 'sepia' && !dark;
 
-  const paras = useMemo(() => item?.chapters.flatMap((c, ci) => c.paragraphs.map((p, pi) => ({ key: `${ci}:${pi}`, chapter: c.title, text: p, ci }))) ?? [], [item]);
-  const hits = q.trim() ? paras.filter((p) => p.text.includes(q.trim())) : [];
+  const paras = useMemo(
+    () => item?.chapters.flatMap((c, ci) => c.paragraphs.map((p, pi) => ({ key: `${ci}:${pi}`, chapter: c.title, text: p, ci }))) ?? [],
+    [item]
+  );
+
+  const hits = useMemo(() => (q.trim() ? paras.filter((p) => p.text.includes(q.trim())) : []), [paras, q]);
+
+  // Jump to first hit when query changes
+  useEffect(() => {
+    if (hits.length > 0 && q.trim()) {
+      const target = hits[0];
+      const y = paraOffsets.current[target.key];
+      if (typeof y === 'number') {
+        scrollRef.current?.scrollTo({ y: Math.max(0, y - 90), animated: true });
+      }
+    }
+  }, [hits, q]);
+
+  const scrollToHit = (targetPara: (typeof paras)[0]) => {
+    if (!targetPara) return;
+    const y = paraOffsets.current[targetPara.key];
+    if (typeof y === 'number') {
+      scrollRef.current?.scrollTo({ y: Math.max(0, y - 90), animated: true });
+    }
+  };
+
+  const handleNextHit = () => {
+    if (hits.length === 0) return;
+    const next = (activeHitIndex + 1) % hits.length;
+    setActiveHitIndex(next);
+    scrollToHit(hits[next]);
+  };
+
+  const handlePrevHit = () => {
+    if (hits.length === 0) return;
+    const prev = (activeHitIndex - 1 + hits.length) % hits.length;
+    setActiveHitIndex(prev);
+    scrollToHit(hits[prev]);
+  };
 
   useEffect(() => {
     if (item) set({ lastBook: { id: item.id, title: item.title, page: 1 } });
+    return () => {
+      if (saveProgressTimeout.current) clearTimeout(saveProgressTimeout.current);
+    };
   }, [item, set]);
 
   if (!item) {
@@ -48,6 +98,7 @@ export default function Book() {
       </Screen>
     );
   }
+
   const backHref = `/library/folder/${folderId('books', Math.max(0, BOOK_CATEGORIES.indexOf(item.category)))}` as const;
   const dlId = `b:${item.id}`;
   const dl = downloads.some((d) => d.id === dlId);
@@ -58,9 +109,13 @@ export default function Book() {
   const page = Math.max(1, Math.ceil(progress * pages));
 
   const sendHl = () => {
-    paras.filter((p) => hl[p.key]).forEach((p) => addNote(`«${p.text.slice(0, 40)}…» — ${source} · ${p.chapter}`));
+    paras
+      .filter((p) => hl[p.key])
+      .forEach((p) => {
+        addNote(`«${p.text.trim()}»\n\n— المصدر: ${source} · ${p.chapter}`);
+      });
     setHl({});
-    flash('أُضيف إلى دفتر الفوائد مع المصدر');
+    flash('أُضيف النص كاملًا إلى دفتر الفوائد مع توثيق المصدر');
   };
 
   const toggleDl = () => {
@@ -68,15 +123,24 @@ export default function Book() {
       flash(DOWNLOAD_ERRORS.web);
       return;
     }
-    // Book text is stored with the app state, so «downloading» keeps it on the device for offline reading.
     toggleDownload({ id: dlId, name: item.title, kind: 'كتاب', mb: item.size_mb ?? 0.1 });
   };
 
-  const small = { width: 44, height: 44, borderWidth: 1, borderColor: t.line, backgroundColor: t.card, borderRadius: r(12), alignItems: 'center' as const, justifyContent: 'center' as const };
+  const small = {
+    width: 42,
+    height: 42,
+    borderWidth: 1,
+    borderColor: t.line,
+    backgroundColor: t.card,
+    borderRadius: r(12),
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  };
 
   return (
     <Screen
       noTopPad
+      scrollRef={scrollRef}
       padH={22}
       gap={14}
       bg={sepia ? '#F1E6CF' : undefined}
@@ -85,48 +149,148 @@ export default function Book() {
         const max = Math.max(1, contentSize.height - layoutMeasurement.height);
         const pr = Math.min(1, Math.max(0, contentOffset.y / max));
         setProgress(pr);
-        set({ lastBook: { id: item.id, title: item.title, page: Math.max(1, Math.ceil(pr * pages)) } });
+
+        if (saveProgressTimeout.current) clearTimeout(saveProgressTimeout.current);
+        saveProgressTimeout.current = setTimeout(() => {
+          set({ lastBook: { id: item.id, title: item.title, page: Math.max(1, Math.ceil(pr * pages)) } });
+        }, 400);
       }}
       header={
-        <View style={{ paddingTop: top, paddingHorizontal: 20, paddingBottom: 10, gap: 10, borderBottomWidth: 1, borderColor: t.line }}>
+        <View style={{ paddingTop: top, paddingHorizontal: 18, paddingBottom: 10, gap: 10, borderBottomWidth: 1, borderColor: t.line, backgroundColor: t.bg }}>
+          {/* Top toolbar */}
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
             <BackLink label={item.category} href={backHref} />
             <View style={{ flexDirection: 'row', gap: 6 }}>
+              {/* Search toggle */}
+              <Press
+                onPress={() => setSearchOpen(!searchOpen)}
+                label={searchOpen ? 'إغلاق البحث' : 'بحث داخل الكتاب'}
+                style={{ ...small, backgroundColor: searchOpen ? t.goldSoft : t.card, borderColor: searchOpen ? t.goldInk : t.line }}>
+                <Icon d={ICON.search} size={18} color={searchOpen ? t.goldInk : t.ink} sw={2.2} />
+              </Press>
+
               <Press onPress={toggleDl} label={dl ? 'إزالة التنزيل' : 'تنزيل الكتاب'} style={{ ...small, width: undefined, paddingHorizontal: 12 }}>
-                <Txt size={14} weight={600} color={t.primary}>
-                  {dl ? 'تم التنزيل ✓' : 'تنزيل'}
+                <Txt size={13} weight={600} color={t.primary}>
+                  {dl ? 'منزّل ✓' : 'تنزيل'}
                 </Txt>
               </Press>
+
               <Press onPress={() => set({ bookFs: Math.max(0, bookFs - 1) as 0 | 1 | 2 })} label="تصغير الخط" style={small}>
                 <Txt size={15} fixed>
                   أ−
                 </Txt>
               </Press>
+
               <Press onPress={() => set({ bookFs: Math.min(2, bookFs + 1) as 0 | 1 | 2 })} label="تكبير الخط" style={small}>
                 <Txt size={20} fixed>
                   أ+
                 </Txt>
               </Press>
+
+              <Press onPress={() => openReport(`كتاب: ${item.title}`)} label="إبلاغ عن ملاحظة" style={small}>
+                <Icon d={ICON.flag} size={18} color={t.muted} sw={2.2} />
+              </Press>
             </View>
           </View>
-          <Txt font="display" size={26} weight={700} accessibilityRole="header">
+
+          {/* Book title */}
+          <Txt font="display" size={24} weight={700} accessibilityRole="header" numberOfLines={1}>
             {item.title}
           </Txt>
-          <View style={{ backgroundColor: cs.backgroundColor, borderColor: cs.borderColor, borderWidth: cs.borderWidth, boxShadow: cs.boxShadow, borderRadius: r(12), paddingHorizontal: 12, height: 42, justifyContent: 'center' }}>
-            <TextInput
-              value={q}
-              onChangeText={setQ}
-              placeholder="ابحث داخل الكتاب"
-              placeholderTextColor={t.muted}
-              accessibilityLabel="ابحث داخل الكتاب"
-              style={{ fontFamily: font('ui'), fontSize: 16, color: t.ink, height: 38, textAlign: 'right' }}
-            />
-          </View>
-          {!!q.trim() && (
-            <View style={{ backgroundColor: t.goldSoft, borderRadius: r(10), paddingVertical: 8, paddingHorizontal: 10 }} accessibilityLiveRegion="polite">
-              <Txt size={14} color={t.goldInk} lh={1.7}>
-                {hits.length ? `${hits.length} نتيجة لـ «${q.trim()}» — مظلّلة في النص.` : `لا نتائج لـ «${q.trim()}» في هذا الكتاب.`}
-              </Txt>
+
+          {/* Integrated Search Bar (shown when searchOpen is true) */}
+          {searchOpen && (
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, height: 42 }}>
+              {/* Input field */}
+              <View
+                style={{
+                  flex: 1,
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  backgroundColor: cs.backgroundColor,
+                  borderColor: cs.borderColor,
+                  borderWidth: cs.borderWidth,
+                  borderRadius: r(12),
+                  paddingHorizontal: 10,
+                  height: 42,
+                }}>
+                <TextInput
+                  value={q}
+                  onChangeText={(val) => {
+                    setQ(val);
+                    setActiveHitIndex(0);
+                  }}
+                  placeholder="ابحث في نص هذا الكتاب…"
+                  placeholderTextColor={t.muted}
+                  accessibilityLabel="ابحث في نص هذا الكتاب"
+                  autoFocus
+                  style={{ flex: 1, fontFamily: font('ui'), fontSize: 14, color: t.ink, paddingHorizontal: 6, textAlign: 'right' }}
+                />
+                {!!q && (
+                  <Press
+                    onPress={() => {
+                      setQ('');
+                      setActiveHitIndex(0);
+                    }}
+                    label="مسح"
+                    style={{ padding: 4 }}>
+                    <Icon d={ICON.close} size={16} color={t.muted} sw={2} />
+                  </Press>
+                )}
+              </View>
+
+              {/* Counter badge */}
+              {!!q.trim() && (
+                <View
+                  style={{
+                    paddingHorizontal: 8,
+                    height: 34,
+                    borderRadius: r(10),
+                    backgroundColor: hits.length > 0 ? t.goldSoft : t.soft,
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                  }}>
+                  <Txt size={12} weight={700} color={hits.length > 0 ? t.goldInk : t.muted} ltr>
+                    {hits.length > 0 ? `${activeHitIndex + 1}/${hits.length}` : '0'}
+                  </Txt>
+                </View>
+              )}
+
+              {/* Prev / Next navigation */}
+              {hits.length > 0 && (
+                <View style={{ flexDirection: 'row', gap: 4 }}>
+                  <Press
+                    onPress={handlePrevHit}
+                    label="السابق"
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: r(10),
+                      backgroundColor: t.card,
+                      borderWidth: 1,
+                      borderColor: t.line,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                    <Icon d={ICON.chevronUp} size={18} color={t.ink} sw={2.2} />
+                  </Press>
+                  <Press
+                    onPress={handleNextHit}
+                    label="التالي"
+                    style={{
+                      width: 36,
+                      height: 36,
+                      borderRadius: r(10),
+                      backgroundColor: t.card,
+                      borderWidth: 1,
+                      borderColor: t.line,
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                    }}>
+                    <Icon d={ICON.chevronDown} size={18} color={t.ink} sw={2.2} />
+                  </Press>
+                </View>
+              )}
             </View>
           )}
         </View>
@@ -145,7 +309,7 @@ export default function Book() {
               </Press>
             </View>
           )}
-          <View style={{ backgroundColor: t.card, borderTopWidth: 1, borderColor: t.line, paddingTop: 12, paddingHorizontal: 20, paddingBottom: 24, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View style={{ backgroundColor: t.card, borderTopWidth: 1, borderColor: t.line, paddingTop: 10, paddingHorizontal: 20, paddingBottom: 22, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
             <Txt size={14} color={t.muted}>
               صفحة {page} من {pages}
             </Txt>
@@ -155,26 +319,53 @@ export default function Book() {
           </View>
         </>
       }>
-      {paras.map((p, i) => (
-        <View key={p.key}>
-          {(i === 0 || paras[i - 1].ci !== p.ci) && (
-            <Txt size={14} color={t.muted} style={{ marginBottom: 8 }}>
-              {p.chapter}
-            </Txt>
-          )}
-          <Press
-            onPress={() => setHl({ ...hl, [p.key]: !hl[p.key] })}
-            accessibilityRole="checkbox"
-            accessibilityState={{ checked: !!hl[p.key] }}
-            label={`تحديد الفقرة ${i + 1}`}
-            style={{ borderRadius: 12, paddingVertical: 8, paddingHorizontal: 10, marginHorizontal: -10, backgroundColor: hl[p.key] ? t.goldSoft : hits.includes(p) ? t.soft : 'transparent' }}>
-            <Txt size={BOOK_FS[bookFs]} lh={lhBook} color={t.body}>
-              {p.text}
-            </Txt>
-          </Press>
-          <ReportLink where={`كتاب ${item.title} · ${p.chapter} · فقرة ${i + 1}`} />
+      {paras.map((p, i) => {
+        const isHit = hits.includes(p);
+        const isActiveHit = hits[activeHitIndex]?.key === p.key;
+
+        return (
+          <View
+            key={p.key}
+            onLayout={(e) => {
+              paraOffsets.current[p.key] = e.nativeEvent.layout.y;
+            }}>
+            {(i === 0 || paras[i - 1].ci !== p.ci) && (
+              <Txt size={15} weight={700} color={t.primary} style={{ marginTop: i > 0 ? 16 : 0, marginBottom: 8 }}>
+                {p.chapter}
+              </Txt>
+            )}
+            <Press
+              onPress={() => setHl({ ...hl, [p.key]: !hl[p.key] })}
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: !!hl[p.key] }}
+              label={`تحديد الفقرة ${i + 1}`}
+              style={{
+                borderRadius: 12,
+                paddingVertical: 8,
+                paddingHorizontal: 10,
+                marginHorizontal: -10,
+                backgroundColor: hl[p.key]
+                  ? t.goldSoft
+                  : isActiveHit
+                  ? t.goldSoft
+                  : isHit
+                  ? 'rgba(196, 166, 106, 0.18)'
+                  : 'transparent',
+                borderWidth: isActiveHit ? 1.5 : 0,
+                borderColor: isActiveHit ? t.goldInk : 'transparent',
+              }}>
+              <Txt size={BOOK_FS[bookFs]} lh={lhBook} color={t.body}>
+                {p.text}
+              </Txt>
+            </Press>
+          </View>
+        );
+      })}
+      {paras.length > 0 && (
+        <View style={{ alignItems: 'center', paddingTop: 28, paddingBottom: 16 }}>
+          <ReportLink where={`كتاب ${item.title}`} label="أبلغ عن ملاحظة أو خطأ في هذا الكتاب" />
         </View>
-      ))}
+      )}
       {!paras.length && (
         <Txt size={15} color={t.muted} align="center">
           نص الكتاب يُدرج بعد التوثيق.

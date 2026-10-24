@@ -64,12 +64,14 @@ export interface ScreenProps {
   overlay?: ReactNode;
   keyboard?: boolean;
   onScroll?: (e: NativeSyntheticEvent<NativeScrollEvent>) => void;
+  scrollRef?: React.Ref<React.ComponentRef<typeof ScrollView>>;
 }
 
-export function Screen({ children, header, footer, gap = 16, padH = 20, padBottom = 20, noTopPad, bg, scroll = true, contentStyle, overlay, keyboard, onScroll }: ScreenProps) {
+export function Screen({ children, header, footer, gap = 16, padH = 20, padBottom = 20, noTopPad, bg, scroll = true, contentStyle, overlay, keyboard, onScroll, scrollRef }: ScreenProps) {
   const top = useTopPad();
   const body = scroll ? (
     <ScrollView
+      ref={scrollRef}
       style={{ flex: 1 }}
       contentContainerStyle={[{ paddingTop: noTopPad ? 16 : top, paddingHorizontal: padH, paddingBottom: padBottom, gap }, contentStyle]}
       keyboardShouldPersistTaps="handled"
@@ -103,15 +105,15 @@ export function Screen({ children, header, footer, gap = 16, padH = 20, padBotto
 }
 
 /** Go back to the labelled parent: pops if it is in history, otherwise replaces (direct web loads). */
-export function useBackTo(href: Href) {
+export function useBackTo(href: Href | string) {
   const router = useRouter();
-  return () => router.dismissTo(href);
+  return () => router.dismissTo(href as any);
 }
 
 /** «‹ label» back link (chevron points right in RTL). */
-export function BackLink({ label, href, color, onPress }: { label: string; href?: Href; color?: string; onPress?: () => void }) {
+export function BackLink({ label, href, color, onPress }: { label: string; href?: Href | string; color?: string; onPress?: () => void }) {
   const { t } = useTheme();
-  const back = useBackTo(href ?? '/');
+  const back = useBackTo((href as Href) ?? '/');
   const c = color ?? t.primary;
   return (
     <Press
@@ -127,20 +129,23 @@ export function BackLink({ label, href, color, onPress }: { label: string; href?
 }
 
 /** Round 44px back button with a title (settings, qibla map, kaaba). */
-export function RoundBackHeader({ title, href, size = 32 }: { title: string; href: Href; size?: number }) {
+export function RoundBackHeader({ title, href, size = 32, right }: { title: string; href: Href | string; size?: number; right?: ReactNode }) {
   const { t } = useTheme();
   const back = useBackTo(href);
   return (
-    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-      <Press
-        onPress={back}
-        label="رجوع"
-        style={{ width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: t.line, backgroundColor: t.card, alignItems: 'center', justifyContent: 'center' }}>
-        <Icon d={ICON.back} size={20} color={t.ink} sw={2.2} directional />
-      </Press>
-      <Txt font="display" size={size} weight={700} accessibilityRole="header">
-        {title}
-      </Txt>
+    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 10, width: '100%' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
+        <Press
+          onPress={back}
+          label="رجوع"
+          style={{ width: 44, height: 44, borderRadius: 22, borderWidth: 1, borderColor: t.line, backgroundColor: t.card, alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+          <Icon d={ICON.back} size={20} color={t.ink} sw={2.2} directional />
+        </Press>
+        <Txt font="display" size={size} weight={700} accessibilityRole="header" style={{ flex: 1, flexShrink: 1 }} numberOfLines={2}>
+          {title}
+        </Txt>
+      </View>
+      {right && <View style={{ flexShrink: 0 }}>{right}</View>}
     </View>
   );
 }
@@ -148,7 +153,14 @@ export function RoundBackHeader({ title, href, size = 32 }: { title: string; hre
 /** Screen title in the display font (32px). */
 export function Title({ children, size = 32, align }: { children: ReactNode; size?: number; align?: 'center' }) {
   return (
-    <Txt font="display" size={size} weight={700} lh={1.4} align={align} accessibilityRole="header">
+    <Txt
+      font="display"
+      size={size}
+      weight={700}
+      lh={1.5}
+      align={align}
+      accessibilityRole="header"
+      style={{ paddingVertical: 4, marginVertical: 2 }}>
       {children}
     </Txt>
   );

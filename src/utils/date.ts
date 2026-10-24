@@ -14,6 +14,11 @@ export function addDays(d: Date, n: number): Date {
   return x;
 }
 
+/** Day keys for the last `n` days, today first. */
+export function lastDays(n: number, now: Date): string[] {
+  return Array.from({ length: n }, (_, i) => dayKey(addDays(now, -i)));
+}
+
 export function startOfDay(d: Date = new Date()): number {
   const x = new Date(d);
   x.setHours(0, 0, 0, 0);

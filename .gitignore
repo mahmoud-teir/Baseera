@@ -53,3 +53,11 @@ design-source/extracted/
 # local tool settings and extracted design copies (the zips are kept)
 .claude/settings.local.json
 design-source/extracted-dashboard/
+*.keystore
+
+# Builds & Binaries
+*.apk
+*.aab
+
+# Temp root screenshots
+/*.png

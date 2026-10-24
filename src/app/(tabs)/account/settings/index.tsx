@@ -1,3 +1,4 @@
+import { getMuadhinInfo } from '@/services/muadhin';
 /**
  * الإعدادات — `s.settings`: profile name, 4 quick tiles and 8 collapsible sections.
  * Every row does something real: appearance, prayer calculation, Quran audio, learning,
@@ -5,7 +6,7 @@
  */
 import Constants from 'expo-constants';
 import { useRouter } from 'expo-router';
-import { useState, type ReactNode } from 'react';
+import { useEffect, useState, type ReactNode } from 'react';
 import { Linking, Platform, TextInput, View } from 'react-native';
 
 import { Icon } from '@/components/core/Icon';
@@ -16,11 +17,12 @@ import { Hero } from '@/components/layout/Hero';
 import { RoundBackHeader, Screen } from '@/components/layout/Screen';
 import { reciterName } from '@/data/quran';
 import { ICON } from '@/data/structural';
+import { DevicesSheet } from '@/features/account/DevicesSheet';
 import { CityPickerSheet, useLocateAction } from '@/features/prayer/LocationPicker';
-import { useIsStaff } from '@/features/admin/useIsStaff';
 import { deleteAccount, signOut, useSession } from '@/services/auth';
 import { exportData, wipeLocal } from '@/services/export';
 import { notificationsSupported } from '@/services/notifications';
+import { METHOD_OPTIONS } from '@/services/prayer';
 import { useApp, type SettingKey, type SettingsValues } from '@/state/app-store';
 import { useUi } from '@/state/ui-store';
 import { useTheme } from '@/theme/theme';
@@ -50,14 +52,22 @@ export default function Settings() {
   const flash = useUi((s) => s.flash);
   const openReport = useUi((s) => s.openReport);
   const { session } = useSession();
-  const isStaff = useIsStaff();
   const { locate } = useLocateAction();
   const [open, setOpen] = useState<number | null>(0);
   const [confirm, setConfirm] = useState<string | null>(null);
   const [pick, setPick] = useState(false);
+  const [devicesOpen, setDevicesOpen] = useState(false);
+
+  useEffect(() => {
+    const metaName = (session?.user?.user_metadata?.display_name as string | undefined)?.trim();
+    const currentName = useApp.getState().pname;
+    if (metaName && (!currentName || currentName === 'طالب العلم') && metaName !== currentName) {
+      useApp.getState().set({ pname: metaName });
+    }
+  }, [session?.user?.id, session?.user?.user_metadata?.display_name]);
   const gv = st.setting;
   const sv = <K extends SettingKey>(k: K, v: SettingsValues[K]) => st.setSetting(k, v);
-  const tg = (k: 'prayNotif' | 'adhkarRem' | 'autoNext' | 'wifi' | 'dailyRem' | 'nDaily' | 'nQuiz' | 'nSeason' | 'nContent' | 'sync', label: string, sub?: string): Row => ({
+  const tg = (k: 'prayNotif' | 'adhkarRem' | 'autoNext' | 'wifi' | 'dailyRem' | 'nDaily' | 'nQuiz' | 'nSeason' | 'nContent' | 'sync' | 'quranRem', label: string, sub?: string): Row => ({
     kind: 'toggle',
     label,
     sub,
@@ -83,6 +93,8 @@ export default function Settings() {
       { kind: 'choice', label: 'حجم الخط', opts: FS, value: FS[st.fs], pick: (v) => st.set({ fs: FS.indexOf(v) as 0 | 1 | 2 }) },
       { kind: 'choice', label: 'تباعد الأسطر', opts: LS, value: LS[st.ls], pick: (v) => st.set({ ls: LS.indexOf(v) as 0 | 1 | 2 }) },
       { kind: 'choice', label: 'خلفية القراءة', sub: 'للقرآن والكتب', opts: ['افتراضي', 'ورقي'], value: st.rt === 'sepia' ? 'ورقي' : 'افتراضي', pick: (v) => st.set({ rt: v === 'ورقي' ? 'sepia' : 'default' }) },
+      { kind: 'choice', label: 'نمط قراءة القرآن', sub: 'صفحات المصحف أو آيات مجزأة', opts: ['صفحات المصحف', 'آيات مجزأة'], value: gv('quranMode'), pick: (v) => sv('quranMode', v as any) },
+      { kind: 'choice', label: 'التفسير المعتمد', sub: 'تفسير الآيات في المصحف', opts: ['تفسير السعدي', 'التفسير الميسر', 'تفسير ابن كثير', 'تفسير البغوي', 'تفسير القرطبي', 'تفسير الطبري'], value: gv('tafsir'), pick: (v) => sv('tafsir', v as any) },
       { kind: 'toggle', label: 'تباين عالٍ', sub: 'نصوص وحدود أوضح', on: st.hc, tap: () => st.set({ hc: !st.hc }) },
       { kind: 'toggle', label: 'تقليل الحركة', sub: st.rm === null ? 'يتبع إعداد الجهاز الآن' : 'إيقاف الحركات والانتقالات', on: !!st.rm, tap: () => st.set({ rm: !st.rm }) },
     ],
@@ -95,16 +107,20 @@ export default function Settings() {
         value: gv('loc'),
         pick: (v) => (v === 'تلقائي' ? locate() : setPick(true)),
       },
-      { kind: 'choice', label: 'طريقة الحساب', opts: ['أم القرى', 'رابطة العالم الإسلامي', 'الهيئة المصرية', 'كراتشي', 'أمريكا الشمالية'], value: gv('calc'), pick: (v) => sv('calc', v) },
+      { kind: 'choice', label: 'طريقة الحساب', sub: 'التلقائي يختار الطريقة المعتمدة في بلد موقعك', opts: METHOD_OPTIONS, value: gv('calc'), pick: (v) => sv('calc', v) },
+      { kind: 'choice', label: 'نظام الوقت', opts: ['12 ساعة', '24 ساعة'], value: gv('clock'), pick: (v) => sv('clock', v) },
       { kind: 'choice', label: 'وقت العصر', opts: ['الجمهور', 'الحنفي'], value: gv('asr'), pick: (v) => sv('asr', v) },
       { kind: 'choice', label: 'تعديل المواقيت (دقائق)', opts: ['−2', '−1', '0', '+1', '+2'], value: gv('adj'), pick: (v) => sv('adj', v) },
       tg('prayNotif', 'تنبيهات الصلاة', notifSub),
       tg('adhkarRem', 'تذكير الأذكار', notifSub ?? 'الصباح والمساء بعد الفجر والعصر'),
-      { kind: 'info', label: 'صوت الأذان', val: 'صوت التنبيه الافتراضي' },
+      { kind: 'link', label: 'المؤذن وصوت الأذان', sub: getMuadhinInfo(gv('muadhin')).name, tap: () => router.push('/account/settings/muadhin' as any) },
     ],
     [
       { kind: 'link', label: 'القارئ الافتراضي', sub: reciterName(gv('reciter')), tap: () => router.push('/account/settings/reciter') },
+      { kind: 'choice', label: 'نمط قراءة القرآن', sub: 'صفحات المصحف الشريف أو بطاقات الآيات', opts: ['صفحات المصحف', 'آيات مجزأة'], value: gv('quranMode'), pick: (v) => sv('quranMode', v as any) },
+      { kind: 'choice', label: 'التفسير المعتمد', sub: 'أمهات كتب التفسير الموثوقة لأهل السنة والجماعة', opts: ['تفسير السعدي', 'التفسير الميسر', 'تفسير ابن كثير', 'تفسير البغوي', 'تفسير القرطبي', 'تفسير الطبري'], value: gv('tafsir'), pick: (v) => sv('tafsir', v as any) },
       { kind: 'choice', label: 'سرعة التشغيل', opts: ['0.75×', '1×', '1.25×', '1.5×'], value: gv('speed'), pick: (v) => sv('speed', v) },
+      tg('quranRem', 'تذكير الورد القرآني اليومي', notifSub ?? 'مساء كل يوم مع تذكير بآخر آية قرأتها'),
       tg('autoNext', 'الانتقال التلقائي إلى الآية التالية'),
       tg('wifi', 'التنزيل عبر الواي فاي فقط'),
       { kind: 'choice', label: 'جودة الصوت', sub: '«توفير» يستخدم ملفات أصغر حين تتوفر للقارئ', opts: ['توفير', 'عالية'], value: gv('quality'), pick: (v) => sv('quality', v) },
@@ -178,12 +194,8 @@ export default function Settings() {
       {
         kind: 'link',
         label: 'الأجهزة المرتبطة',
-        sub: 'تسجيل الخروج من الأجهزة الأخرى',
-        tap: async () => {
-          if (!session) return flash('سجّل الدخول أولًا.');
-          const res = await signOut('others');
-          flash(res.ok ? (res.message ?? 'تم') : res.error);
-        },
+        sub: 'عرض تفاصيل الجهاز وإدارة الجلسات',
+        tap: () => setDevicesOpen(true),
       },
       {
         kind: 'danger',
@@ -200,7 +212,7 @@ export default function Settings() {
       { kind: 'link', label: 'الإشراف العلمي', sub: 'من يراجع المحتوى ومنهجه', tap: () => router.push('/account/settings/supervision') },
       { kind: 'link', label: 'كيف يُموَّل المشروع', sub: 'شفافية المصادر والمصروفات', tap: () => router.push('/account/settings/funding') },
       { kind: 'link', label: 'تواصل معنا واقتراحاتك', tap: () => router.push('/account/settings/contact') },
-      ...(isStaff ? [{ kind: 'link', label: 'لوحة بصيرة', sub: 'لفريق المحتوى والمراجعة', tap: () => router.push('/admin') } as Row] : []),
+      { kind: 'link', label: 'لوحة الإدارة والتحكم', sub: 'إدارة المتون والاعتماد وتحديثات التطبيق', tap: () => router.push('/admin') },
       { kind: 'link', label: 'أبلغ عن خطأ في المحتوى', tap: () => openReport('عام · الإعدادات') },
     ],
   ];
@@ -297,21 +309,36 @@ export default function Settings() {
   );
 
   return (
-    <Screen gap={18} padBottom={32} overlay={<CityPickerSheet visible={pick} onClose={() => setPick(false)} />}>
+    <Screen
+      gap={18}
+      padBottom={32}
+      overlay={
+        <>
+          <CityPickerSheet visible={pick} onClose={() => setPick(false)} />
+          <DevicesSheet visible={devicesOpen} onClose={() => setDevicesOpen(false)} isSignedIn={!!session} />
+        </>
+      }>
       <RoundBackHeader title="الإعدادات" href="/account" />
       <Hero radius={26} pad={18} diamond={{ size: 140, left: -40, top: -40, color: 'rgba(196,166,106,.5)' }} lattice={false} style={{ flexDirection: 'row', gap: 16, alignItems: 'center' }}>
         <View style={{ width: 68, height: 68, borderRadius: 34, backgroundColor: '#FAF8F2', borderWidth: 3, borderColor: gc, alignItems: 'center', justifyContent: 'center' }}>
           <Txt font="display" size={32} weight={700} color={pc}>
-            {(st.pname || 'ط').trim().charAt(0) || 'ط'}
+            {((st.pname || session?.user?.user_metadata?.display_name || session?.user?.email || 'ط').trim().charAt(0) || 'ط').toUpperCase()}
           </Txt>
         </View>
         <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
           <TextInput
             value={st.pname}
             onChangeText={(v) => st.set({ pname: v.slice(0, 60) })}
+            placeholder={session?.user?.user_metadata?.display_name || 'اسم الحساب / الطالب'}
+            placeholderTextColor="rgba(255,255,255,.65)"
             accessibilityLabel="الاسم"
             style={{ height: 44, borderBottomWidth: 1.5, borderColor: 'rgba(255,255,255,.4)', color: '#FFFFFF', fontFamily: font('display', 700), fontSize: 24, padding: 0, textAlign: 'right' }}
           />
+          {session?.user.email ? (
+            <Txt size={13} color="#CFE0DA" ltr numberOfLines={1} style={{ alignSelf: 'flex-start' }}>
+              {session.user.email}
+            </Txt>
+          ) : null}
           <Txt size={14} color="#CFE0DA">
             المرحلة الأولى · {Object.keys(st.passed).length} دروس مكتملة
           </Txt>

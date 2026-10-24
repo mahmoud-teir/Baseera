@@ -7,7 +7,7 @@
 import { geoAzimuthalEquidistant, geoGraticule10, geoPath } from 'd3-geo';
 import { useMemo, useState } from 'react';
 import { View } from 'react-native';
-import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from 'react-native-svg';
+import Svg, { Circle, G, Line, Path, Rect } from 'react-native-svg';
 import { feature } from 'topojson-client';
 import type { GeometryCollection, Topology } from 'topojson-specification';
 
@@ -34,7 +34,7 @@ const GRATICULE = path(geoGraticule10()) ?? '';
 const SPHERE = path({ type: 'Sphere' }) ?? '';
 
 export function QiblaMap() {
-  const { t, r, font } = useTheme();
+  const { t, r } = useTheme();
   const { width, colW, wide } = useLayout();
   const loc = useApp((s) => s.location);
   const options = useMemo(
@@ -51,6 +51,12 @@ export function QiblaMap() {
   const avail = (wide ? colW : width || 390) - 40 - 26;
   const side = Math.max(240, Math.min(avail, 440));
   const labelBelow = p[1] < 40;
+  // City label as native text over the map: SVG <text> does not shape Arabic (letters came out
+  // disconnected on Android). Positioned in screen pixels from the projected point.
+  const k = side / SIZE;
+  const LABEL_W = 220;
+  const labelLeft = Math.max(0, Math.min(side - LABEL_W, p[0] * k - LABEL_W / 2));
+  const labelTop = labelBelow ? (p[1] + 10) * k : (p[1] - 12) * k - 24;
 
   return (
     <View style={{ gap: 14 }}>
@@ -63,19 +69,18 @@ export function QiblaMap() {
             <Line x1={p[0]} y1={p[1]} x2={c[0]} y2={c[1]} stroke="#0E2A25" strokeOpacity={0.6} strokeWidth={5} strokeLinecap="round" />
             <Line x1={p[0]} y1={p[1]} x2={c[0]} y2={c[1]} stroke="#C4A66A" strokeWidth={2.5} strokeDasharray="6 5" strokeLinecap="round" />
             <Circle cx={p[0]} cy={p[1]} r={6} fill="#FAF8F2" stroke="#C4A66A" strokeWidth={2} />
-            {/* Label with a dark halo so it stays readable over land and sea. */}
-            <SvgText x={p[0]} y={labelBelow ? p[1] + 24 : p[1] - 13} fontSize={13} fontFamily={font('ui', 700)} textAnchor="middle" stroke="#0E2A25" strokeWidth={4} strokeLinejoin="round" fill="#0E2A25">
-              {city.name}
-            </SvgText>
-            <SvgText x={p[0]} y={labelBelow ? p[1] + 24 : p[1] - 13} fontSize={13} fontFamily={font('ui', 700)} textAnchor="middle" fill="#FAF8F2">
-              {city.name}
-            </SvgText>
             <G x={c[0]} y={c[1]}>
               <Rect x={-7} y={-7} width={14} height={14} fill="#C4A66A" />
               <Rect x={-7} y={-7} width={14} height={14} fill="#C4A66A" transform="rotate(45)" />
               <Circle r={3} fill="#0E2A25" />
             </G>
           </Svg>
+          {/* Label with a dark halo so it stays readable over land and sea. */}
+          <View pointerEvents="none" style={{ position: 'absolute', left: labelLeft, top: labelTop, width: LABEL_W, alignItems: 'center' }}>
+            <Txt size={13} weight={700} color="#FAF8F2" align="center" numberOfLines={1} style={{ textShadowColor: '#0E2A25', textShadowRadius: 4, textShadowOffset: { width: 0, height: 0 } }}>
+              {city.name}
+            </Txt>
+          </View>
         </View>
       </View>
       <View style={{ flexDirection: 'row', gap: 10 }}>

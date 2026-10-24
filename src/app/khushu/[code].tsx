@@ -4,17 +4,18 @@ import { StatusBar } from 'expo-status-bar';
 import { useState } from 'react';
 import { ScrollView, View } from 'react-native';
 
+import { PlayGlyph } from '@/components/core/PlayGlyph';
 import { Press } from '@/components/core/Press';
 import { ProgressBar } from '@/components/core/ProgressBar';
 import { Txt } from '@/components/core/Txt';
 import { Column, useTopPad } from '@/components/layout/Screen';
 import { type Lesson } from '@/data/content';
-import { LESSON_CODES, type Subject } from '@/data/structural';
+import { ALL_LESSON_CODES, type Subject } from '@/data/structural';
 import { LessonUnavailable, useLesson } from '@/features/academy/useLesson';
 import { isCurrent, pause, playQueue, seekBy, toggle, useAudio } from '@/services/audio';
 
 export function generateStaticParams() {
-  return LESSON_CODES.map((code) => ({ code }));
+  return ALL_LESSON_CODES.map((code) => ({ code }));
 }
 
 const TITLE = [34, 40, 48];
@@ -86,9 +87,7 @@ function KhushuBody({ lesson }: { lesson: Lesson; siblings: Lesson[]; subject: S
               disabled={!hasAudio}
               label={!hasAudio ? 'الشرح الصوتي غير متاح بعد' : playing ? 'إيقاف مؤقت' : 'تشغيل'}
               style={{ width: 72, height: 72, borderRadius: 36, backgroundColor: '#C4A66A', alignItems: 'center', justifyContent: 'center', opacity: hasAudio ? 1 : 0.5 }}>
-              <Txt size={22} color="#182D29">
-                {playing ? '❚❚' : '▶'}
-              </Txt>
+              <PlayGlyph playing={playing} size={19} color="#182D29" />
             </Press>
             <Press onPress={() => seekBy(15)} disabled={!playing} label="تقديم 15 ثانية" style={{ minHeight: 44, justifyContent: 'center' }}>
               <Txt size={15} color="#9DB3AD">

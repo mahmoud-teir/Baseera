@@ -9,6 +9,8 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 import { OfflineBanner } from '@/components/overlays/OfflineBanner';
 import { EvidenceChainSheet, ReportSheet, Toast } from '@/components/overlays/GlobalSheets';
+import { UpdateModal } from '@/features/updater/UpdateModal';
+import { useAppUpdater } from '@/features/updater/useAppUpdater';
 import { useBackgroundServices } from '@/services/bootstrap';
 import { useApp } from '@/state/app-store';
 import { useConfig } from '@/state/config-store';
@@ -32,6 +34,15 @@ function Shell() {
   const { t, dark } = useTheme();
   const pathname = usePathname();
   useBackgroundServices();
+
+  useEffect(() => {
+    // Check for app updates silently on launch
+    const timer = setTimeout(() => {
+      useAppUpdater.getState().checkUpdate(true);
+    }, 2500);
+    return () => clearTimeout(timer);
+  }, []);
+
   const hasTabBar = TABBED_PREFIXES.some((p) => (p === '/' ? pathname === '/' : pathname === p || pathname.startsWith(p + '/')));
   return (
     <View style={{ flex: 1, backgroundColor: t.bg }}>
@@ -47,6 +58,7 @@ function Shell() {
       <EvidenceChainSheet />
       <ReportSheet />
       <Toast hasTabBar={hasTabBar} />
+      <UpdateModal />
     </View>
   );
 }

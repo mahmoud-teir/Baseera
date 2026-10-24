@@ -5,6 +5,42 @@
 
 /** Subject icon paths (SD) — 24×24 stroke icons. */
 export const ICON = {
+  // --- Dedicated Islamic Sacred Glyphs ---
+  /** العقيدة والتوحيد: الكعبة المشرفة رمز التوحيد وبيت الله الحرام */
+  aqeedah:
+    'M12 2L4 6.5v11L12 22l8-4.5V6.5L12 2z M12 22V11 M4 6.5l8 4.5 8-4.5 M4 10l8 4.5 8-4.5 M14.5 14v4.5l3-1.7V12.3z',
+  /** الكعبة المشرفة */
+  kaaba:
+    'M12 2L4 6.5v11L12 22l8-4.5V6.5L12 2z M12 22V11 M4 6.5l8 4.5 8-4.5 M4 10l8 4.5 8-4.5 M14.5 14v4.5l3-1.7V12.3z',
+  /** الفقه والعبادات: ميزان الشريعة والأحكام الفقهية الخمسة */
+  fiqh:
+    'M12 2v19 M7 21h10 M12 5l-8 2 M12 5l8 2 M4 7l-2.5 6.5h5z M20 7l-2.5 6.5h5z M11 2h2 M12 2l-1.5 3h3z',
+  /** القرآن والتفسير: المصحف الشريف على حامل الرَّحْلَة الخشبي المطوي */
+  tafsir:
+    'M3 4.5c3-1.5 6-1.5 9 1 3-2.5 6-2.5 9-1v9c-3-1.5-6-1.5-9 1-3-2.5-6-2.5-9-1z M12 5.5V14 M5 14L19 22 M19 14L5 22 M4 22h3 M17 22h3 M12 14v3',
+  /** الحديث النبوي: مخطوطة السند والمتن النبوية مع خاتم الرواية والسماع */
+  hadith:
+    'M19 17V5a2 2 0 0 0-2-2H6a3 3 0 0 0-3 3v12a3 3 0 0 0 3 3h11a2 2 0 0 0 2-2z M3 6a3 3 0 0 1 3-3h11a2 2 0 0 1 2 2v1 M7 8h10 M7 11.5h10 M7 15h6 M15 17a2 2 0 1 0 4 0 2 2 0 1 0-4 0',
+  /** السيرة النبوية: القبة الخضراء الشريفة والمنارة النبوية بالمدينة المنورة */
+  seerah:
+    'M11 5c-3 1.5-4 4.5-4 7h8c0-2.5-1-5.5-4-7z M11 2.5v2.5 M5 12h12v9H5z M9 21v-3.5a2 2 0 0 1 4 0V21 M19 21V7l2-2v16 M18 10h4 M2 21h20',
+  /** المسبحة الإلكترونية: عقد حبات التسبيح مع الشاهد وشرابة الحرير */
+  tasbeeh:
+    'M12 2C7 2 4 5.5 4 9.5c0 3 2.5 5 8 7 5.5-2 8-4 8-7C20 5.5 17 2 12 2z M11 16.5h2v2h-2z M12 18.5v3.5 M10 22h4 M12 18.5l-2 3.5 M12 18.5l2 3.5 M9.5 3l.8 1.4 M14.5 3l-.8 1.4 M6.2 5.5l1.2.9 M17.8 5.5l-1.2.9 M4.8 9.5h1.5 M19.2 9.5h-1.5 M6.5 13.5l1.2-.9 M17.5 13.5l-1.2-.9',
+  /** الأدعية المأثورة: كفّان مرفوعان بالتضرع والدعاء */
+  dua:
+    'M12 18.5c-2.5 1.5-5.5 1-6.5-.8L3.5 8.5A1.5 1.5 0 0 1 6 7l1.5 3V3.5a1.5 1.5 0 0 1 3 0v7 M12 18.5c2.5 1.5 5.5 1 6.5-.8l2-9.2A1.5 1.5 0 0 0 18 7l-1.5 3V3.5a1.5 1.5 0 0 0-3 0v7 M12 12.5v6 M7 21h10',
+  /** السنن والرواتب: سجادة الصلاة الإسلامية مع المحراب المتجه للقبلة وهدب الخيوط */
+  sunan:
+    'M6 3.5h12a1 1 0 0 1 1 1v15a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-15a1 1 0 0 1 1-1z M8 17V11c0-2 2-4 4-5 2 1 4 3 4 5v6 M8 17h8 M8 2v1.5 M12 2v1.5 M16 2v1.5 M8 20.5v1.5 M12 20.5v1.5 M16 20.5v1.5',
+  /** أسماء الله الحسنى: الختم الإسلامي الثماني (ربع الحزب) المشع */
+  names:
+    'M6 6h12v12H6z M12 2.5l9.5 9.5-9.5 9.5-9.5-9.5z M12 9.5a2.5 2.5 0 1 0 0 5 2.5 2.5 0 0 0 0-5z',
+  /** النجمة الإسلامية الثمانية (خاتم التوحيد) */
+  star8:
+    'M6 6h12v12H6z M12 2.5l9.5 9.5-9.5 9.5-9.5-9.5z M10 12a2 2 0 1 0 4 0 2 2 0 1 0-4 0',
+
+  // --- Classical general glyphs ---
   sun: 'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8z M12 2v2 M12 20v2 M4.93 4.93l1.41 1.41 M17.66 17.66l1.41 1.41 M2 12h2 M20 12h2 M6.34 17.66l-1.41 1.41 M19.07 4.93l-1.41 1.41',
   scales:
     'M12 3v18 M7 21h10 M3 7h2c2 0 5-1 7-2 2 1 5 2 7 2h2 M5 8l-3 8c.9.65 1.9 1 3 1s2.1-.35 3-1z M19 8l-3 8c.9.65 1.9 1 3 1s2.1-.35 3-1z',
@@ -44,6 +80,7 @@ export const ICON = {
   forward: 'M15 5l-7 7 7 7',
   close: 'M6 6l12 12 M18 6L6 18',
   chevronDown: 'M6 9l6 6 6-6',
+  chevronUp: 'M18 15l-6-6-6 6',
   link: 'M10 13a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1 1 M14 11a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7l1-1',
   flag: 'M4 22V4 M4 4h13l-2 4 2 4H4',
   lockBody: 'M5 11h14v10H5z',
@@ -57,10 +94,13 @@ export const ICON = {
   tabQuran: 'M2 4h6a4 4 0 0 1 4 4v13a3 3 0 0 0-3-3H2z M22 4h-6a4 4 0 0 0-4 4v13a3 3 0 0 1 3-3h7z',
   tabLibrary: 'M4 4v16M9 4v16 M15 4h4a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1h-4a1 1 0 0 1-1-1V5a1 1 0 0 1 1-1z',
   tabAccount: 'M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8z M4 21c0-4 4-6 8-6s8 2 8 6',
+  tabMore: 'M3 3h7v7H3z M14 3h7v7h-7z M3 14h7v7H3z M14 14h7v7h-7z',
   search: 'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14z M20 20l-4-4',
   download: 'M12 3v12 M7 10l5 5 5-5 M5 21h14',
   share: 'M4 12v7a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-7 M16 6l-4-4-4 4 M12 2v13',
   pin: 'M12 2a7 7 0 0 0-7 7c0 5 7 13 7 13s7-8 7-13a7 7 0 0 0-7-7z M12 7a2 2 0 1 0 0 4 2 2 0 0 0 0-4z',
+  sparkle: 'M12 2l2.4 7.2L22 12l-7.6 2.8L12 22l-2.4-7.2L2 12l7.6-2.8z',
+  tag: 'M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z M7 7h.01',
 } as const;
 
 export interface Subject {
@@ -72,15 +112,39 @@ export interface Subject {
   icon: string;
 }
 
-/** names + SD — six subjects of stage 1 (8/11/8/8/10/8 = 53 lessons). Only AQ has lessons. */
+/** names + SD — six subjects of stage 1 (8/11/8/8/10/8 = 53 lessons). */
 export const SUBJECTS: Subject[] = [
-  { id: 'aqeedah', prefix: 'AQ', name: 'العقيدة والتوحيد', short: 'العقيدة', count: 8, icon: ICON.sun },
-  { id: 'fiqh', prefix: 'FQ', name: 'الفقه والعبادات', short: 'الفقه', count: 11, icon: ICON.scales },
-  { id: 'tafsir', prefix: 'TF', name: 'القرآن والتفسير', short: 'التفسير', count: 8, icon: ICON.book },
-  { id: 'hadith', prefix: 'HD', name: 'الحديث النبوي', short: 'الحديث', count: 8, icon: ICON.doc },
-  { id: 'seerah', prefix: 'SR', name: 'السيرة النبوية', short: 'السيرة', count: 10, icon: ICON.compass },
+  { id: 'aqeedah', prefix: 'AQ', name: 'العقيدة والتوحيد', short: 'العقيدة', count: 8, icon: ICON.aqeedah },
+  { id: 'fiqh', prefix: 'FQ', name: 'الفقه والعبادات', short: 'الفقه', count: 11, icon: ICON.fiqh },
+  { id: 'tafsir', prefix: 'TF', name: 'القرآن والتفسير', short: 'التفسير', count: 8, icon: ICON.tafsir },
+  { id: 'hadith', prefix: 'HD', name: 'الحديث النبوي', short: 'الحديث', count: 8, icon: ICON.hadith },
+  { id: 'seerah', prefix: 'SR', name: 'السيرة النبوية', short: 'السيرة', count: 10, icon: ICON.seerah },
   { id: 'tazkiyah', prefix: 'TZ', name: 'الأخلاق والتزكية', short: 'التزكية', count: 8, icon: ICON.heart },
 ];
+
+/** Nine subjects of Stage 2 (Level 2: التأصيل والعلوم الآلية - 108 lessons). */
+export const STAGE2_SUBJECTS_LIST: Subject[] = [
+  { id: 'muamalat', prefix: 'ML', name: 'المعاملات المالية والبيوع المعاصرة', short: 'المعاملات', count: 14, icon: ICON.fiqh },
+  { id: 'ahwal', prefix: 'AH', name: 'فقه الأسرة والأحوال الشخصية', short: 'الأحوال', count: 12, icon: ICON.user },
+  { id: 'mawarith', prefix: 'MW', name: 'علم الفرائض وقسمة التركات', short: 'المواريث', count: 12, icon: ICON.fiqh },
+  { id: 'usul', prefix: 'US', name: 'أصول الفقه ومقاصد الشريعة', short: 'الأصول', count: 14, icon: ICON.layers },
+  { id: 'mustalah', prefix: 'MH', name: 'مصطلح الحديث المنهجي', short: 'المصطلح', count: 12, icon: ICON.hadith },
+  { id: 'wasitiyyah', prefix: 'WS', name: 'العقيدة الموسعة (الواسطية)', short: 'العقيدة 2', count: 12, icon: ICON.aqeedah },
+  { id: 'usul_tafsir', prefix: 'OT', name: 'علوم القرآن وأصول التفسير', short: 'أصول التفسير', count: 10, icon: ICON.tafsir },
+  { id: 'arabic', prefix: 'AR', name: 'اللغة العربية والنحو القرآني', short: 'النحو', count: 14, icon: ICON.pen },
+  { id: 'qada', prefix: 'QD', name: 'القضاء والسياسة الشرعية', short: 'القضاء', count: 8, icon: ICON.shield },
+];
+
+/** Five subjects of Stage 3 (Level 3: التخريج والاجتهاد والترجيح المقارن - 70 lessons). */
+export const STAGE3_SUBJECTS_LIST: Subject[] = [
+  { id: 'comparative_fiqh', prefix: 'CF', name: 'الفقه المقارن وأدلة المذاهب الأربعة', short: 'الفقه المقارن', count: 16, icon: ICON.fiqh },
+  { id: 'advanced_usul', prefix: 'AU', name: 'أصول الفقه الموسع وتخريج الفروع', short: 'الأصول الموسع', count: 14, icon: ICON.layers },
+  { id: 'hadith_ilal', prefix: 'IL', name: 'صحيح البخاري وعلل الحديث ودقائقه', short: 'علل الحديث', count: 14, icon: ICON.hadith },
+  { id: 'tafsir_comparative', prefix: 'TC', name: 'التفسير المقارن وأحكام القرآن', short: 'التفسير المقارن', count: 14, icon: ICON.tafsir },
+  { id: 'nawazil', prefix: 'NW', name: 'فقه النوازل المعاصرة والمقاصد الكبرى', short: 'النوازل', count: 12, icon: ICON.compass },
+];
+
+export const ALL_SUBJECTS: Subject[] = [...SUBJECTS, ...STAGE2_SUBJECTS_LIST, ...STAGE3_SUBJECTS_LIST];
 
 /**
  * Every lesson code of the stage-1 curriculum outline (AQ-01 … TZ-08). Used to pre-render lesson
@@ -88,6 +152,12 @@ export const SUBJECTS: Subject[] = [
  * the default for `app_config.curriculum`.
  */
 export const LESSON_CODES: string[] = SUBJECTS.flatMap((s) => Array.from({ length: s.count }, (_, i) => `${s.prefix}-${String(i + 1).padStart(2, '0')}`));
+
+export const STAGE2_LESSON_CODES: string[] = STAGE2_SUBJECTS_LIST.flatMap((s) => Array.from({ length: s.count }, (_, i) => `${s.prefix}-${String(i + 1).padStart(2, '0')}`));
+
+export const STAGE3_LESSON_CODES: string[] = STAGE3_SUBJECTS_LIST.flatMap((s) => Array.from({ length: s.count }, (_, i) => `${s.prefix}-${String(i + 1).padStart(2, '0')}`));
+
+export const ALL_LESSON_CODES: string[] = [...LESSON_CODES, ...STAGE2_LESSON_CODES, ...STAGE3_LESSON_CODES];
 
 export const lessonCountLabel = (n: number) => `${n}${n === 11 ? ' درسًا' : ' دروس'}`;
 
@@ -219,6 +289,13 @@ export const ADHKAR = [
   { id: 'after-prayer', name: 'أذكار بعد الصلاة', icon: ICON.check },
   { id: 'sleep', name: 'أذكار النوم', icon: ICON.bed },
   { id: 'waking', name: 'أذكار الاستيقاظ', icon: ICON.sunrise },
+  { id: 'mosque', name: 'أذكار المسجد', icon: ICON.pin },
+  { id: 'wudhu', name: 'أذكار الوضوء', icon: ICON.sparkle },
+  { id: 'food', name: 'أذكار الطعام والشراب', icon: ICON.tag },
+  { id: 'travel', name: 'أذكار السفر', icon: ICON.forward },
+  { id: 'distress', name: 'أذكار الكرب والهم', icon: ICON.heart },
+  { id: 'ruqyah', name: 'الرقية الشرعية', icon: ICON.book },
+  { id: 'daily-life', name: 'أذكار جامعة ومتفرقة', icon: ICON.sparkle },
 ] as const;
 
 /** Hijri month names (HM), sacred months, events (HEV/HEVD), seasons (SEA). */
@@ -248,17 +325,17 @@ export const SEASONS = [
 
 /** Library categories (ART): icon + oklch hue. */
 export const LIBRARY_ART: Record<string, { icon: string; hue: number }> = {
-  العقيدة: { icon: ICON.sun, hue: 165 },
-  الفقه: { icon: ICON.scales, hue: 215 },
-  التفسير: { icon: ICON.book, hue: 265 },
-  الحديث: { icon: ICON.doc, hue: 25 },
-  السيرة: { icon: ICON.compass, hue: 75 },
+  العقيدة: { icon: ICON.aqeedah, hue: 165 },
+  الفقه: { icon: ICON.fiqh, hue: 215 },
+  التفسير: { icon: ICON.tafsir, hue: 265 },
+  الحديث: { icon: ICON.hadith, hue: 25 },
+  السيرة: { icon: ICON.seerah, hue: 75 },
   'التاريخ الإسلامي': { icon: ICON.clock, hue: 330 },
   'اللغة العربية': { icon: ICON.pen, hue: 120 },
   'أصول الفقه': { icon: ICON.layers, hue: 190 },
   'شروح العلماء': { icon: ICON.mic, hue: 165 },
   'المحاضرات والدروس': { icon: ICON.house2, hue: 245 },
-  'التلاوات القرآنية': { icon: ICON.book, hue: 140 },
+  'التلاوات القرآنية': { icon: ICON.tafsir, hue: 140 },
   'الأناشيد المنتقاة': { icon: ICON.music, hue: 300 },
   'الخطب والدروس العلمية': { icon: ICON.speaker, hue: 50 },
 };

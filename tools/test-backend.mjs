@@ -164,6 +164,7 @@ for (const [kind, slot, data] of [
   ['adhkar', 'morning', { items: [{ id: 'm1', text: 'نص', count: 1, source: '' }] }],
   ['story', 'prophets/0', { sections: { النسب: { text: 'نص', source: '' } } }],
   ['tafsir', '1', { tafsir: 'تفسير', source: '', ayahs: { 1: 'نص' } }],
+  ['vocab', 'taghut', { word: 'الطاغوت', meaning: 'معنى', ayahs: [] }],
   ['audio', 'a1', { title: 'تسجيل', source: 'مصدر', audio_url: 'http://insecure' }],
 ]) {
   const id = (await rpc(C, `select public.admin_save_draft('${kind}', '${slot}', ${lit(data)}) as id`)).rows[0].id;
@@ -209,7 +210,7 @@ await fails(AD, `select public.admin_save_config('prayer', '{"method":"Umm al-Qu
 await rpc(AD, `select public.admin_save_config('curriculum', '{"stage1":{"aqeedah":2,"fiqh":1},"passPct":85}')`);
 ok((await db.query(`select lessons from public.stage_requirements where stage = 1`)).rows[0].lessons === 3, 'app_config: curriculum totals drive the certificate requirement');
 await rpc(AD, `update public.app_config set value = '{}'`);
-ok((await db.query(`select value->>'method' as m from public.app_config where key = 'prayer'`)).rows[0].m === 'Muslim World League', 'app_config: no direct writes');
+ok((await db.query(`select value->>'method' as m from public.app_config where key = 'prayer'`)).rows[0].m === 'Automatic', 'app_config: no direct writes');
 
 const audit = (await rpc(C, `select item, action, actor_role from public.audit_log`)).rows;
 ok(audit.some((r) => r.item === 'ct:' + lid && r.action === 'review → published' && r.actor_role === 'scholar'), 'audit_log: transitions are recorded with the actor role');

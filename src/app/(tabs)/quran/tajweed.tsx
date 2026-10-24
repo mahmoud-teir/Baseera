@@ -9,6 +9,7 @@ import { Press } from '@/components/core/Press';
 import { Txt } from '@/components/core/Txt';
 import { BackLink, Lead, Screen, Title } from '@/components/layout/Screen';
 import { TAJWEED_TOPICS } from '@/data/structural';
+import { DEFAULT_TAJWEED } from '@/data/defaults';
 import { useContent } from '@/state/content-store';
 import { useTheme } from '@/theme/theme';
 
@@ -37,7 +38,7 @@ export default function Tajweed() {
         </Txt>
       </Press>
       {TAJWEED_TOPICS.map((x, i) => {
-        const d = topics[String(i)];
+        const d = topics[String(i)] ?? DEFAULT_TAJWEED[String(i)];
         const on = open === i;
         return (
           <Card key={x} variant="app" radius={18} pad={14} style={{ gap: 10, ...(i === 0 ? { borderColor: pc } : null) }}>

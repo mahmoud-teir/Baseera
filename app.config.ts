@@ -15,7 +15,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: `بصيرة${NAME_SUFFIX}`,
   slug: 'baseerah',
-  version: '1.0.0',
+  version: '1.1.0',
   orientation: 'default',
   icon: './assets/images/icon.png',
   scheme: 'baseerah',
@@ -58,6 +58,9 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   plugins: [
     'expo-router',
+    './plugins/withShortCmakeObjectPaths',
+    './plugins/withReleaseSigning',
+    './plugins/withExtraProguardRules',
     ['expo-localization', { supportsRTL: true, forcesRTL: true }],
     [
       'expo-splash-screen',
@@ -80,6 +83,28 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
     'expo-font',
     'expo-sharing',
     'expo-web-browser',
+    [
+      'react-native-android-widget',
+      {
+        widgets: [
+          {
+            name: 'PrayerWidget',
+            label: 'مواقيت الصلاة — بصيرة',
+            minWidth: '250dp',
+            minHeight: '110dp',
+            targetCellWidth: 4,
+            targetCellHeight: 2,
+            maxResizeWidth: '500dp',
+            maxResizeHeight: '400dp',
+            resizeMode: 'horizontal|vertical',
+            description: 'عرض الصلاة القادمة والوقت المتبقي وجدول مواقيت اليوم مع التاريخ الهجري',
+            previewImage: './assets/images/icon.png',
+            updatePeriodMillis: 1800000,
+            widgetCategory: 'home_screen|keyguard',
+          },
+        ],
+      },
+    ],
   ],
   experiments: {
     typedRoutes: true,

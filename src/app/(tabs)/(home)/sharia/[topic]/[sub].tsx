@@ -5,6 +5,7 @@ import { View } from 'react-native';
 import { Txt } from '@/components/core/Txt';
 import { BackLink, Screen } from '@/components/layout/Screen';
 import { SHARIA_SECTIONS, SHARIA_TOPICS } from '@/data/structural';
+import { DEFAULT_SHARIA } from '@/data/defaults';
 import { SourcedSection } from '@/features/content/SourcedSection';
 import { useContent } from '@/state/content-store';
 import { useTheme } from '@/theme/theme';
@@ -18,7 +19,9 @@ export default function ShariaDetail() {
   const tp = SHARIA_TOPICS[Number(topic)] ?? SHARIA_TOPICS[0];
   const name = tp.subs[Number(sub)] ?? tp.subs[0];
   const { t } = useTheme();
-  const published = useContent((s) => s.sharia[`${Number(topic) || 0}/${Number(sub) || 0}`]);
+  const slotKey = `${Number(topic) || 0}/${Number(sub) || 0}`;
+  const published = useContent((s) => s.sharia[slotKey]);
+  const defaultSharia = DEFAULT_SHARIA[slotKey];
   return (
     <Screen gap={12}>
       <BackLink label="الموسوعة" href="/sharia" />
@@ -29,7 +32,14 @@ export default function ShariaDetail() {
         {name}
       </Txt>
       {SHARIA_SECTIONS.map((x) => (
-        <SourcedSection key={x} heading={x} data={published?.sections[x]} where={`الموسوعة · ${name} · ${x}`} pending="يُدرج هنا بعد المراجعة العلمية مع المصدر ورقم الصفحة." actions />
+        <SourcedSection
+          key={x}
+          heading={x}
+          data={published?.sections[x] ?? defaultSharia?.sections[x]}
+          where={`الموسوعة · ${name} · ${x}`}
+          pending="يُدرج هنا بعد المراجعة العلمية مع المصدر ورقم الصفحة."
+          actions
+        />
       ))}
       <View style={{ backgroundColor: t.goldSoft, borderRadius: 16, paddingVertical: 12, paddingHorizontal: 14 }}>
         <Txt size={14} color={t.goldInk} lh={1.9}>

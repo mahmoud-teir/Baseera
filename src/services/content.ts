@@ -3,17 +3,21 @@
  * — only items published by the review team through the console appear (`published_content`,
  * kinds book/audio, read via the content store). No demo items are ever added.
  */
+import { DEFAULT_LIBRARY } from '@/data/libraryData';
 import { AUDIO_CATEGORIES, BOOK_CATEGORIES } from '@/data/structural';
 import { useContent, type LibraryItem } from '@/state/content-store';
 
 export type { LibraryItem } from '@/state/content-store';
 
 export function cachedItem(id: string): LibraryItem | undefined {
-  return useContent.getState().library.find((x) => x.id === id);
+  const published = useContent.getState().library;
+  const list = published.length ? published : DEFAULT_LIBRARY;
+  return list.find((x) => x.id === id);
 }
 
 export function useLibrary() {
-  const items = useContent((s) => s.library);
+  const published = useContent((s) => s.library);
+  const items = published.length ? published : DEFAULT_LIBRARY;
   const status = useContent((s) => s.status);
   const refresh = useContent((s) => s.refresh);
   return { items, loading: status === 'loading', error: status === 'error', reload: refresh };

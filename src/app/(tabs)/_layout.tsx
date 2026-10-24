@@ -1,6 +1,6 @@
 /**
- * Tab navigator — five tabs (HANDOFF §4 TabBar): الرئيسية، الأكاديمية، القرآن، المكتبة، حسابي.
- * Phones: 84px bottom bar. Tablets/desktop (≥768px): the prototype's 150px vertical side rail on the
+ * Tab navigator — five tabs: الرئيسية، الأكاديمية، القرآن، المكتبة، المزيد.
+ * Phones: 84px bottom bar. Tablets/desktop (≥768px): the 150px vertical side rail on the
  * start (right) side, next to a centred content column.
  */
 import { TabList, TabSlot, TabTrigger, Tabs, type TabTriggerSlotProps } from 'expo-router/ui';
@@ -20,7 +20,7 @@ const TABS = [
   { name: 'academy', href: '/academy', label: 'الأكاديمية', icon: ICON.tabAcademy },
   { name: 'quran', href: '/quran', label: 'القرآن', icon: ICON.tabQuran },
   { name: 'library', href: '/library', label: 'المكتبة', icon: ICON.tabLibrary },
-  { name: 'account', href: '/account', label: 'حسابي', icon: ICON.tabAccount },
+  { name: 'account', href: '/account', label: 'المزيد', icon: ICON.tabMore },
 ] as const;
 
 type TabButtonProps = TabTriggerSlotProps & { label: string; icon: string };

@@ -1,6 +1,7 @@
 /** القارئ الافتراضي — choose the recitation used by the reader, with a short preview of Al-Fatiha 1:1. */
 import { View } from 'react-native';
 
+import { PlayGlyph } from '@/components/core/PlayGlyph';
 import { Card } from '@/components/core/Card';
 import { Press } from '@/components/core/Press';
 import { Txt } from '@/components/core/Txt';
@@ -37,9 +38,10 @@ export default function Reciter() {
             <Press
               onPress={() => (previewing || isCurrent(pid) ? stop() : playQueue([{ id: pid, title: 'معاينة', uri: ayahAudioUrl(rc.id, 1, 1), artist: rc.name }], 0, { repeat: 1, autoNext: false }))}
               label={previewing ? `إيقاف معاينة ${rc.name}` : `معاينة ${rc.name}`}
-              style={{ minHeight: 44, paddingHorizontal: 8, justifyContent: 'center' }}>
+              style={{ minHeight: 44, paddingHorizontal: 8, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <PlayGlyph playing={previewing} size={12} color={t.primary} />
               <Txt size={14} weight={600} color={t.primary}>
-                {previewing ? '❚❚ إيقاف' : '▶ معاينة'}
+                {previewing ? 'إيقاف' : 'معاينة'}
               </Txt>
             </Press>
           </Card>

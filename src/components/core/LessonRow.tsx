@@ -2,6 +2,7 @@ import { View } from 'react-native';
 
 import { useTheme } from '@/theme/theme';
 
+import { PlayGlyph } from './PlayGlyph';
 import { LockIcon } from './Icon';
 import { Press } from './Press';
 import { Txt } from './Txt';
@@ -54,9 +55,13 @@ export function LessonRow({ code, title, state = 'locked', onClick, onPress }: L
         {lock ? (
           <LockIcon color={t.muted} />
         ) : (
-          <Txt size={17} color={dark ? '#0E2A25' : '#FFFFFF'}>
-            {done ? '✓' : '▶'}
-          </Txt>
+          done ? (
+            <Txt size={17} color={dark ? '#0E2A25' : '#FFFFFF'}>
+              ✓
+            </Txt>
+          ) : (
+            <PlayGlyph size={14} color={dark ? '#0E2A25' : '#FFFFFF'} />
+          )
         )}
       </View>
       <View style={{ flex: 1, gap: 2 }}>

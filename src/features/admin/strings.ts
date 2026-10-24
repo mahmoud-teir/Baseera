@@ -5,7 +5,21 @@
  */
 export type Lang = 'en' | 'ar';
 export type Role = 'content' | 'scholar' | 'mod' | 'analytics' | 'admin';
-export type ViewId = 'queue' | 'overview' | 'lessons' | 'evidence' | 'catalog' | 'library' | 'reports' | 'inbox' | 'scholars' | 'learners' | 'certs' | 'prayer' | 'roles';
+export type ViewId =
+  | 'queue'
+  | 'overview'
+  | 'lessons'
+  | 'evidence'
+  | 'catalog'
+  | 'library'
+  | 'reports'
+  | 'inbox'
+  | 'scholars'
+  | 'learners'
+  | 'certs'
+  | 'prayer'
+  | 'roles'
+  | 'updates';
 export type Section = 'work' | 'content' | 'feedback' | 'people' | 'system';
 
 export const ROLES: Role[] = ['content', 'scholar', 'mod', 'analytics', 'admin'];
@@ -26,6 +40,7 @@ export const VIEWS: { id: ViewId; sec: Section; roles: Role[] }[] = [
   { id: 'certs', sec: 'people', roles: ['analytics', 'admin'] },
   { id: 'prayer', sec: 'system', roles: ['admin'] },
   { id: 'roles', sec: 'system', roles: ['admin'] },
+  { id: 'updates', sec: 'system', roles: ['admin'] },
 ];
 export const VIEW_IDS = VIEWS.map((v) => v.id);
 
@@ -38,12 +53,12 @@ export const MATRIX: Record<Role, number[]> = {
   admin: [1, 1, 1, 1, 1, 1],
 };
 
-export const METHODS = ['Muslim World League', 'Umm al-Qura', 'Egyptian General Authority', 'Karachi', 'ISNA'] as const;
+export const METHODS = ['Automatic', 'Muslim World League', 'Umm al-Qura', 'Egyptian General Authority', 'Karachi', 'ISNA'] as const;
 
 const en = {
   brand: 'Baseerah Console', langBtn: 'العربية', search: 'Search', searchPh: 'Jump to a screen or item…', notif: 'Alerts',
   work: 'Work', content: 'Content', feedback: 'Feedback', people: 'People', system: 'System',
-  queue: 'Work queue', overview: 'Overview', lessons: 'Lessons', evidence: 'Evidence', library: 'Library & audio', reports: 'Error reports', scholars: 'Scholars', learners: 'Learners', certs: 'Certificates', prayer: 'Prayer & calendar', roles: 'Roles & audit',
+  queue: 'Work queue', overview: 'Overview', lessons: 'Lessons', evidence: 'Evidence', library: 'Library & audio', reports: 'Error reports', scholars: 'Scholars', learners: 'Learners', certs: 'Certificates', prayer: 'Prayer & calendar', roles: 'Roles & audit', updates: 'App Updates & APK',
   overviewSub: 'What needs attention across the app.', weekly: 'Lessons completed this week', pipeline: 'Content pipeline',
   queueSub: 'Everything waiting on a person, newest first.', evSub: 'Each card moves Draft → Scholar review → Approved.', rpSub: 'Each report moves New → Triaged → Fixed → Learner notified.',
   all: 'All', mineOnly: 'Only my role', exportBtn: 'Export CSV / JSON', selected: 'selected', bulkAdv: 'Advance', clear: 'Clear', empty: 'Nothing waiting here.', pick: 'Select an item to review.', history: 'History', approvals: 'Approvals',
@@ -58,35 +73,34 @@ const en = {
   nApprove: 'Lesson 3 needs one more approval', nReport: 'New error report in Lesson 2', nEv: 'Evidence card waiting for scholar',
   cols: { scholars: ['Reviewer', 'Specialty', 'Pending', 'Reviewed', 'Status'], library: ['Item', 'Type', 'Category', 'Source', 'Status'], learners: ['Lesson', 'Learners', 'Avg. progress', 'Pass rate'], certs: ['Code', 'Learner', 'Issued', 'Status'], roles: ['Permission', 'Content', 'Scholar', 'Moderator', 'Analytics', 'Admin'] } as Record<string, string[]>,
   tt: { scholars: 'Scholars & reviewers', library: 'Library & audio' } as Record<string, string>,
-  ts: { scholars: 'Reviewer identities and credentials are added by you.', library: 'Covers, audio and reciters stay empty until you supply them.', learners: 'Progress by lesson.', certs: 'Issued certificates and their verification codes.', roles: 'Who can do what. Switch role in the top bar to preview.' } as Record<string, string>,
-  perms: ['View queues', 'Edit lessons', 'Approve evidence', 'Triage reports', 'See analytics', 'Manage roles'],
-  kpi: ['Evidence awaiting scholar', 'Open error reports', 'Lessons awaiting approval', 'Active learners', 'Lesson completion', 'Avg. quiz score'],
-  kpiS: ['Live count', 'Live count', 'Needs 2 approvals', 'Last 30 days', 'Across all lessons', 'Pass threshold 70%'],
-  roleN: { content: 'Content team', scholar: 'Scholar reviewer', mod: 'Moderator', analytics: 'Analytics', admin: 'Super admin' } as Record<Role, string>,
-  status: { await: 'Awaiting content', active: 'Active', notSet: 'Not set', issued: 'Issued', pend: 'Pending' },
-  days: ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
-  // added
+  ts: { scholars: 'Add reviewers and their accreditations here.', library: 'Covers and recordings stay empty until uploaded.', learners: 'Progress grouped by lesson.', certs: 'Issued certificates and codes.', roles: 'Who can do what. Switch role above to preview.' } as Record<string, string>,
+  perms: ['View lists', 'Edit lessons', 'Approve evidence', 'Triage reports', 'View analytics', 'Manage roles'],
+  kpi: ['Evidence pending scholar', 'Open reports', 'Lessons pending approval', 'Active learners', 'Completed lessons', 'Quiz average'],
+  kpiS: ['Live count', 'Live count', 'Needs 2 approvals', 'Last 30 days', 'All lessons', 'Pass mark 70%'],
+  roleN: { content: 'Content team', scholar: 'Scholar reviewer', mod: 'Moderator', analytics: 'Analytics', admin: 'Admin' } as Record<Role, string>,
+  status: { await: 'Awaiting content', active: 'Active', notSet: 'Not set', issued: 'Issued', pend: 'Pending' } as Record<string, string>,
+  days: ['S', 'M', 'T', 'W', 'T', 'F', 'S'],
   needOneMore: (t: string) => `${t} needs one more approval`,
-  newReport: (w: string) => `New error report in ${w}`,
-  signInTitle: 'Staff sign-in required', signInBody: 'Sign in with a staff account to open the console.', signIn: 'Sign in',
-  noAccessTitle: 'No console access', noAccessBody: 'This account has no staff role. An admin can grant one in the staff table.',
-  loadFail: 'Could not load console data.', retry: 'Retry', saved: 'Saved', failed: 'Action refused by the server', backToApp: 'Back to app',
-  previewOnly: 'Preview only — the server still enforces your real role.',
+  newReport: (w: string) => `New report in ${w}`,
+  signInTitle: 'Staff sign-in required', signInBody: 'Sign in with a staff account to access the console.', signIn: 'Sign in',
+  noAccessTitle: 'No staff role', noAccessBody: 'This account has no staff role assigned yet.',
+  loadFail: 'Failed to load console data.', retry: 'Retry', saved: 'Saved', failed: 'Server rejected this action', backToApp: 'Back to app',
+  previewOnly: 'Preview only — the server enforces your real role.',
   live: 'Live', drafted: 'Draft saved',
-  none: '—', book: 'Book', audio: 'Audio', yes: 'Yes', no: 'No', published: 'Published', unpublished: 'Not published',
-  deleted: 'Deleted', created: 'Created', notConnectedTitle: 'Backend not connected', notConnectedBody: 'Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to use the console. It shows live data only.',
-  catalog: 'Content catalog', catalogSub: 'Every content slot of the app. Empty slots show «pending verification» to learners until published.',
-  inbox: 'Contact messages', inboxSub: 'Messages sent from «Contact us» in the app.',
-  librarySub: 'Books and recordings. Nothing appears in the app before scholar approval with a source.',
-  saveDraft: 'Save draft', newItem: 'New', edit: 'Edit', cancel: 'Cancel', remove: 'Remove', add: 'Add', up: 'Move up', down: 'Move down', upload: 'Upload file', urlPh: 'https://…',
-  notStarted: 'Not started', liveVersion: 'A published version is live; this draft replaces it after approval.', unsaved: 'Unsaved changes',
-  newEvidence: 'New evidence card', lessonCode: 'Lesson', addBook: 'Add book', addAudio: 'Add recording', newQuote: 'New quote', deleteItem: 'Delete', confirmDelete: 'Tap again to delete',
-  kinds: { lesson: 'Lesson', evidence: 'Evidence', quote: 'Quote', story: 'Story', sharia: 'Encyclopedia', adhkar: 'Adhkar', tafsir: 'Tafsir', tajweed: 'Tajweed', drill: 'Listening drill', path: 'Path', map: 'Knowledge map', page: 'Page', book: 'Book', audio: 'Recording' } as Record<string, string>,
+  none: '—', book: 'Book', audio: 'Audio', yes: 'Yes', no: 'No', published: 'Published', unpublished: 'Unpublished',
+  deleted: 'Deleted', created: 'Created', notConnectedTitle: 'Backend not connected', notConnectedBody: 'Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY to use the console.',
+  catalog: 'Content catalog', catalogSub: 'All content slots across the app.',
+  inbox: 'Contact messages', inboxSub: 'Messages sent via «Contact us» in the app.',
+  librarySub: 'Books and recordings. Must be approved with a source before appearing in the app.',
+  saveDraft: 'Save draft', newItem: 'New', edit: 'Edit', cancel: 'Cancel', remove: 'Remove', add: 'Add', up: 'Up', down: 'Down', upload: 'Upload file', urlPh: 'https://…',
+  notStarted: 'Not started', liveVersion: 'A published version exists; this draft replaces it on approval.', unsaved: 'Unsaved changes',
+  newEvidence: 'New evidence', lessonCode: 'Lesson', addBook: 'Add book', addAudio: 'Add audio', newQuote: 'New quote', deleteItem: 'Delete', confirmDelete: 'Press again to delete',
+  kinds: { lesson: 'Lesson', evidence: 'Evidence', quote: 'Quote', vocab: 'Quran vocabulary', story: 'Seerah', sharia: 'Encyclopedia', adhkar: 'Adhkar', tafsir: 'Tafsir', tajweed: 'Tajweed', drill: 'Listening drill', path: 'Path', map: 'Knowledge map', page: 'Page', book: 'Book', audio: 'Recording' } as Record<string, string>,
   f: {
-    title: 'Title', minutes: 'Minutes', audio: 'Audio explanation', objectives: 'Objectives', sections: 'Explanation sections', heading: 'Heading', body: 'Text', summary: 'Summary points',
-    passPct: 'Pass threshold (%)', questions: 'Quiz questions', q: 'Question', options: 'Options', answer: 'Correct option', explain: 'Explanation', kind: 'Type', label: 'Label', text: 'Verified text',
-    source: 'Source', ref: 'Reference', wajh: 'Point of inference', chain: 'Explanation of the ruling', level: 'Reliability level', reviewers: 'Reviewers', reviewedAt: 'Review date',
-    cat: 'Category', scholar: 'Scholar', items: 'Adhkar', count: 'Repetitions', virtue: 'Virtue (optional)', tafsir: 'Tafsir (author · book)', ayahs: 'Ayah tafsir', ayah: 'Ayah',
+    title: 'Title', minutes: 'Minutes', audio: 'Audio explanation', objectives: 'Objectives', sections: 'Explanation sections', heading: 'Section heading', body: 'Body', summary: 'Summary points',
+    passPct: 'Pass mark (%)', questions: 'Quiz questions', q: 'Question', options: 'Options', answer: 'Correct answer', explain: 'Explanation', kind: 'Kind', label: 'Label', text: 'Verified text',
+    source: 'Source', ref: 'Reference', wajh: 'Reasoning', chain: 'Evidence chain', level: 'Strength', reviewers: 'Reviewers', reviewedAt: 'Review date',
+    cat: 'Category', scholar: 'Scholar', items: 'Items', count: 'Count', virtue: 'Virtue', tafsir: 'Tafsir', ayahs: 'Ayahs', ayah: 'Ayah',
     examples: 'Examples', steps: 'Steps', stepKind: 'Step type', target: 'Opens (app route)', links: 'Links', category: 'Category', author: 'Author', pages: 'Pages', chapters: 'Chapters',
     chapterTitle: 'Chapter title', paragraphs: 'Paragraphs', audioUrl: 'Audio file', sizeMb: 'Size (MB)', item: 'Item',
   } as Record<string, string>,
@@ -107,7 +121,7 @@ type Strings = typeof en;
 const ar: Strings = {
   brand: 'لوحة بصيرة', langBtn: 'English', search: 'بحث', searchPh: 'انتقل إلى شاشة أو عنصر…', notif: 'تنبيهات',
   work: 'العمل', content: 'المحتوى', feedback: 'الملاحظات', people: 'الأشخاص', system: 'النظام',
-  queue: 'قائمة العمل', overview: 'نظرة عامة', lessons: 'الدروس', evidence: 'الأدلة', library: 'المكتبة والصوتيات', reports: 'بلاغات الأخطاء', scholars: 'العلماء', learners: 'المتعلمون', certs: 'الشهادات', prayer: 'الصلاة والتقويم', roles: 'الأدوار والسجل',
+  queue: 'قائمة العمل', overview: 'نظرة عامة', lessons: 'الدروس', evidence: 'الأدلة', library: 'المكتبة والصوتيات', reports: 'بلاغات الأخطاء', scholars: 'العلماء', learners: 'المتعلمون', certs: 'الشهادات', prayer: 'الصلاة والتقويم', roles: 'الأدوار والسجل', updates: 'إدارة التحديثات والـ APK',
   overviewSub: 'ما يحتاج انتباهك في التطبيق.', weekly: 'الدروس المكتملة هذا الأسبوع', pipeline: 'مسار المحتوى',
   queueSub: 'كل ما ينتظر شخصًا، الأحدث أولًا.', evSub: 'تنتقل كل بطاقة: مسودة ← مراجعة عالم ← معتمدة.', rpSub: 'ينتقل كل بلاغ: جديد ← مصنّف ← أُصلح ← أُبلغ المتعلم.',
   all: 'الكل', mineOnly: 'دوري فقط', exportBtn: 'تصدير CSV / JSON', selected: 'محدد', bulkAdv: 'تقدّم', clear: 'مسح', empty: 'لا شيء بانتظارك هنا.', pick: 'اختر عنصرًا للمراجعة.', history: 'السجل', approvals: 'الموافقات',
@@ -144,7 +158,7 @@ const ar: Strings = {
   saveDraft: 'حفظ المسودة', newItem: 'جديد', edit: 'تحرير', cancel: 'إلغاء', remove: 'إزالة', add: 'إضافة', up: 'أعلى', down: 'أسفل', upload: 'رفع ملف', urlPh: 'https://…',
   notStarted: 'لم يبدأ', liveVersion: 'توجد نسخة منشورة؛ تحل هذه المسودة محلها بعد الاعتماد.', unsaved: 'تغييرات غير محفوظة',
   newEvidence: 'دليل جديد', lessonCode: 'الدرس', addBook: 'إضافة كتاب', addAudio: 'إضافة تسجيل', newQuote: 'قول جديد', deleteItem: 'حذف', confirmDelete: 'اضغط مجددًا للحذف',
-  kinds: { lesson: 'درس', evidence: 'دليل', quote: 'قول', story: 'سيرة', sharia: 'الموسوعة', adhkar: 'أذكار', tafsir: 'تفسير', tajweed: 'تجويد', drill: 'تدريب الاستماع', path: 'مسار', map: 'خريطة المعرفة', page: 'صفحة', book: 'كتاب', audio: 'تسجيل' },
+  kinds: { lesson: 'درس', evidence: 'دليل', quote: 'قول', vocab: 'مفردات القرآن', story: 'سيرة', sharia: 'الموسوعة', adhkar: 'أذكار', tafsir: 'تفسير', tajweed: 'تجويد', drill: 'تدريب الاستماع', path: 'مسار', map: 'خريطة المعرفة', page: 'صفحة', book: 'كتاب', audio: 'تسجيل' },
   f: {
     title: 'العنوان', minutes: 'المدة (دقائق)', audio: 'الشرح الصوتي', objectives: 'الأهداف', sections: 'أقسام الشرح', heading: 'العنوان الفرعي', body: 'النص', summary: 'نقاط الملخص',
     passPct: 'حد النجاح (%)', questions: 'أسئلة الاختبار', q: 'السؤال', options: 'الخيارات', answer: 'الخيار الصحيح', explain: 'التوضيح', kind: 'النوع', label: 'التسمية', text: 'النص الموثّق',

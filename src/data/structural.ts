@@ -333,13 +333,15 @@ export const LIBRARY_ART: Record<string, { icon: string; hue: number }> = {
   'التاريخ الإسلامي': { icon: ICON.clock, hue: 330 },
   'اللغة العربية': { icon: ICON.pen, hue: 120 },
   'أصول الفقه': { icon: ICON.layers, hue: 190 },
+  'الرقائق والآداب': { icon: ICON.heart, hue: 350 },
+  'التجويد وعلوم القرآن': { icon: ICON.tafsir, hue: 145 },
   'شروح العلماء': { icon: ICON.mic, hue: 165 },
   'المحاضرات والدروس': { icon: ICON.house2, hue: 245 },
   'التلاوات القرآنية': { icon: ICON.tafsir, hue: 140 },
   'الأناشيد المنتقاة': { icon: ICON.music, hue: 300 },
   'الخطب والدروس العلمية': { icon: ICON.speaker, hue: 50 },
 };
-export const BOOK_CATEGORIES = ['العقيدة', 'الفقه', 'التفسير', 'الحديث', 'السيرة', 'التاريخ الإسلامي', 'اللغة العربية', 'أصول الفقه'];
+export const BOOK_CATEGORIES = ['العقيدة', 'الفقه', 'التفسير', 'الحديث', 'السيرة', 'الرقائق والآداب', 'التجويد وعلوم القرآن', 'أصول الفقه', 'اللغة العربية', 'التاريخ الإسلامي'];
 export const AUDIO_CATEGORIES = ['شروح العلماء', 'المحاضرات والدروس', 'التلاوات القرآنية', 'الأناشيد المنتقاة', 'الخطب والدروس العلمية'];
 export const DOWNLOAD_QUOTA_MB = 200;
 

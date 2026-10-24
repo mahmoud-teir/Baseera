@@ -119,7 +119,7 @@ ok((await as('authenticated', B, 'select * from public.reports')).rows.length ==
 const Q = (id, answer) => ({ id, q: 'سؤال اختبار', options: ['أ', 'ب', 'ج', 'د'], answer, explain: '' });
 const lesson = { title: 'درس اختبار', minutes: 10, objectives: ['هدف'], sections: [{ heading: 'الشرح', body: 'نص' }], summary: ['ملخص'], quiz: { passPct: 80, questions: [Q('q1', 2), Q('q2', 0)] } };
 await fails(B, `select public.admin_save_draft('lesson', 'AQ-01', ${lit(lesson)})`, 'content: scholars cannot write drafts');
-await fails(C, `select public.admin_save_draft('lesson', 'XX-01', ${lit(lesson)})`, 'content: invalid slot keys are refused');
+await fails(C, `select public.admin_save_draft('lesson', 'INVALID-01', ${lit(lesson)})`, 'content: invalid slot keys are refused');
 await fails(C, `select public.admin_save_draft('lesson', 'AQ-01', ${lit({ ...lesson, quiz: { passPct: 40, questions: [] } })})`, 'content: pass threshold below 50 is refused');
 await fails(C, `select public.admin_save_draft('lesson', 'AQ-01', ${lit({ ...lesson, quiz: { passPct: 80, questions: [{ ...Q('q1', 7) }] } })})`, 'content: a correct answer outside the options is refused');
 const lid = (await rpc(C, `select public.admin_save_draft('lesson', 'AQ-01', ${lit(lesson)}) as id`)).rows[0].id;

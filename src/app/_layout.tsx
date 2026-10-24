@@ -3,7 +3,7 @@ import { Stack, usePathname } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect, useState } from 'react';
-import { I18nManager, Platform, View } from 'react-native';
+import { AppState, I18nManager, Platform, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
@@ -36,11 +36,21 @@ function Shell() {
   useBackgroundServices();
 
   useEffect(() => {
-    // Check for app updates silently on launch
-    const timer = setTimeout(() => {
-      useAppUpdater.getState().checkUpdate(true);
-    }, 2500);
-    return () => clearTimeout(timer);
+    if (Platform.OS !== 'android') return;
+    let lastCheck = 0;
+    const check = () => {
+      if (Date.now() - lastCheck < 5 * 60 * 1000) return;
+      lastCheck = Date.now();
+      void useAppUpdater.getState().checkUpdate(true);
+    };
+    const timer = setTimeout(check, 2500);
+    const subscription = AppState.addEventListener('change', (state) => {
+      if (state === 'active') check();
+    });
+    return () => {
+      clearTimeout(timer);
+      subscription.remove();
+    };
   }, []);
 
   const hasTabBar = TABBED_PREFIXES.some((p) => (p === '/' ? pathname === '/' : pathname === p || pathname.startsWith(p + '/')));

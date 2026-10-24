@@ -12,15 +12,11 @@ import { Platform } from 'react-native';
 
 import { supabase } from '@/services/supabase';
 
-export interface AppUpdateData {
-  latestVersion: string; // e.g. "1.1.0"
-  latestVersionCode: number; // e.g. 2
-  apkUrl: string; // Direct APK download URL
-  releaseNotes: string; // Arabic description of new features
-  isMandatory: boolean; // Must update to proceed
-  releasedAt?: string; // ISO date
-  fileSizeBytes?: number; // Optional size in bytes
-}
+import { parseUpdateManifest, isInstallableUpdate, type AppUpdateData } from './update-manifest';
+export type { AppUpdateData } from './update-manifest';
+
+const UPDATE_MANIFEST_URL = process.env.EXPO_PUBLIC_UPDATE_MANIFEST_URL
+  ?? 'https://github.com/MohammedTeir/Baseera/releases/latest/download/update.json';
 
 export const CURRENT_APP_VERSION = Application.nativeApplicationVersion ?? '1.0.0';
 export const CURRENT_VERSION_CODE = Number(Application.nativeBuildVersion ?? 1);
@@ -43,50 +39,71 @@ export function isNewerVersion(remoteVer: string, localVer: string): boolean {
   return false;
 }
 
-/** Check if a remote update is available. Returns null if up-to-date or on error. */
+/** Returns null when current/no release; rejects when discovery fails so manual checks show an error. */
 export async function checkRemoteUpdate(): Promise<AppUpdateData | null> {
+  if (Platform.OS !== 'android') return null;
+
+  // GitHub Releases works without Supabase or embedding a GitHub token in the app.
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 15000);
+  let manifestError: unknown;
   try {
-    if (!supabase) return null;
-
-    let update: AppUpdateData | null = null;
-
-    // 1. Try reading from CMS published_content (slot: 'app_update')
-    const { data: pubData } = await supabase
-      .from('published_content')
-      .select('data')
-      .eq('slot', 'app_update')
-      .maybeSingle();
-
-    if (pubData?.data) {
-      const d = pubData.data as Record<string, unknown>;
-      update = (d.updateInfo as AppUpdateData | undefined) ?? (d as unknown as AppUpdateData);
+    const response = await fetch(UPDATE_MANIFEST_URL, {
+      signal: controller.signal,
+      headers: { Accept: 'application/json', 'Cache-Control': 'no-cache' },
+    });
+    if (response.ok) {
+      const manifest = parseUpdateManifest(await response.json());
+      return isInstallableUpdate(manifest, CURRENT_VERSION_CODE) ? manifest : null;
     }
-
-    // 2. Fallback to app_config table
-    if (!update || !update.latestVersion) {
-      const { data: cfgData } = await supabase
-        .from('app_config')
-        .select('value')
-        .eq('key', 'app_update')
-        .maybeSingle();
-
-      if (cfgData?.value) {
-        update = cfgData.value as AppUpdateData;
-      }
-    }
-
-    if (!update || !update.latestVersion || !update.apkUrl) return null;
-
-    const hasNewVersion = isNewerVersion(update.latestVersion, CURRENT_APP_VERSION);
-    const hasNewBuild = update.latestVersionCode > CURRENT_VERSION_CODE;
-
-    if (hasNewVersion || hasNewBuild) {
-      return update;
-    }
-    return null;
-  } catch {
+    // No release yet is normal for a new repository.
+    if (response.status !== 404) throw new Error(`Update check failed: HTTP ${response.status}`);
+  } catch (error) {
+    manifestError = error;
+  } finally {
+    clearTimeout(timeout);
+  }
+  if (!supabase) {
+    if (manifestError) throw manifestError;
     return null;
   }
+
+  let update: AppUpdateData | null = null;
+
+  // 1. Try reading from CMS published_content (slot: 'app_update')
+  const { data: pubData, error: pubError } = await supabase
+    .from('published_content')
+    .select('data')
+    .eq('slot', 'app_update')
+    .maybeSingle();
+  let fallbackError = pubError;
+
+  if (pubData?.data) {
+    const d = pubData.data as Record<string, unknown>;
+    update = (d.updateInfo as AppUpdateData | undefined) ?? (d as unknown as AppUpdateData);
+  }
+
+  // 2. Fallback to app_config table
+  if (!update || !update.latestVersion) {
+    const { data: cfgData, error: cfgError } = await supabase
+      .from('app_config')
+      .select('value')
+      .eq('key', 'app_update')
+      .maybeSingle();
+    fallbackError = cfgError;
+
+    if (cfgData?.value) {
+      update = cfgData.value as AppUpdateData;
+    }
+  }
+
+  if (!update || !update.latestVersion || !update.apkUrl) {
+    if (manifestError || fallbackError) throw manifestError ?? fallbackError;
+    return null;
+  }
+
+  const parsed = parseUpdateManifest(update);
+  return isInstallableUpdate(parsed, CURRENT_VERSION_CODE) ? parsed : null;
 }
 
 /** Publish a new update to Supabase (Admin only). */
@@ -103,18 +120,10 @@ export async function publishRemoteUpdate(
       releasedAt: update.releasedAt ?? new Date().toISOString(),
     };
 
-    // 1. Ensure authenticated staff session for CMS publishing
+    // The backend RPCs enforce staff permissions using the caller's session.
     const { data: sessionData } = await supabase.auth.getSession();
-    const currentEmail = sessionData?.session?.user?.email;
-
-    if (currentEmail !== 'mahmoudteirbusiness@gmail.com') {
-      const { error: authErr } = await supabase.auth.signInWithPassword({
-        email: 'mahmoudteirbusiness@gmail.com',
-        password: 'M!a@h#m1o2u3d4',
-      });
-      if (authErr) {
-        return { success: false, error: 'فشل التحقق من صلاحيات المدير: ' + authErr.message };
-      }
+    if (!sessionData?.session) {
+      return { success: false, error: 'سجّل الدخول بحساب مخوّل لنشر التحديث.' };
     }
 
     // 2. Publish via CMS RPC pipeline (authorized for admin)
@@ -182,6 +191,7 @@ export async function downloadAndInstallApk(
       return { success: true };
     }
 
+    if (!apkUrl.startsWith('https://')) throw new Error('رابط التحديث يجب أن يستخدم HTTPS.');
     const destination = new File(Paths.cache, 'baseerah-update.apk');
 
     // Delete existing cached update file if any

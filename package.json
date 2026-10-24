@@ -91,7 +91,7 @@
     "test:e2e": "node tools/export-e2e.mjs && playwright test",
     "doctor": "expo-doctor",
     "quran:build": "node tools/build-quran.mjs",
-    "build:android:apk": "eas build -p android --profile preview",
+    "build:android:apk": "eas build -p android --profile release-apk",
     "build:android:aab": "eas build -p android --profile production",
     "build:ios:sim": "eas build -p ios --profile simulator",
     "build:ios": "eas build -p ios --profile production",

@@ -52,6 +52,15 @@ export default function Book() {
   return <RegularBookReader item={item} />;
 }
 
+function cleanEditionText(src?: string | null): string | null {
+  if (!src) return null;
+  let s = src.replace(/https?:\/\/[^\s)]+/g, '').replace(/shamela\.ws\/[^\s)]+/g, '').replace(/[\(\/]\s*[\)\/]/g, '').trim();
+  if (s.includes('المكتبة الشاملة') || s.length < 3) {
+    return 'نسخة محققة معتمدة';
+  }
+  return s.split('—')[0].trim() || 'نسخة محققة معتمدة';
+}
+
 function RegularBookReader({ item }: { item: LibraryItem }) {
   const { t, r, lhBook, cs, font, dark } = useTheme();
   const top = useTopPad(0);
@@ -75,6 +84,11 @@ function RegularBookReader({ item }: { item: LibraryItem }) {
   const saveProgressTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const sepia = rt === 'sepia' && !dark;
+
+  const mainTitle = useMemo(() => {
+    const m = item.title.match(/^([^(]+)/);
+    return m ? m[1].trim() : item.title;
+  }, [item.title]);
 
   const paras = useMemo(
     () => item.chapters.flatMap((c, ci) => c.paragraphs.map((p, pi) => ({ key: `${ci}:${pi}`, chapter: c.title, text: p, ci }))),
@@ -230,8 +244,8 @@ function RegularBookReader({ item }: { item: LibraryItem }) {
           </View>
 
           {/* Book title */}
-          <Txt font="display" size={24} weight={700} accessibilityRole="header" numberOfLines={1}>
-            {item.title}
+          <Txt font="display" size={22} weight={700} accessibilityRole="header" numberOfLines={1}>
+            {mainTitle}
           </Txt>
 
           {/* Integrated Search Bar (shown when searchOpen is true) */}
@@ -356,31 +370,26 @@ function RegularBookReader({ item }: { item: LibraryItem }) {
         </>
       }>
       {/* Book Frontispiece Typographic Cover */}
-      <View style={{ alignItems: 'center', marginVertical: 18, gap: 10 }}>
+      <View style={{ alignItems: 'center', marginTop: 12, marginBottom: 14, gap: 6 }}>
         <BookCover
           title={item.title}
           author={item.author}
           category={item.category}
           source={item.source}
-          coverUrl={item.url}
           size="lg"
         />
-        <View style={{ alignItems: 'center', gap: 4, maxWidth: 320 }}>
-          <Txt font="display" size={22} weight={700} lh={1.3} style={{ textAlign: 'center' }}>
-            {item.title}
-          </Txt>
-          {item.author && (
-            <Txt size={14} color={t.muted} style={{ textAlign: 'center' }}>
-              {item.author}
+        {cleanEditionText(item.source) && (
+          <View style={{ backgroundColor: t.soft, paddingHorizontal: 12, paddingVertical: 3, borderRadius: 14, marginTop: 2 }}>
+            <Txt size={11} color={t.goldInk} weight={600}>
+              {cleanEditionText(item.source)}
             </Txt>
-          )}
-          {item.source && (
-            <Txt size={12} color={t.goldInk} weight={500} style={{ textAlign: 'center' }}>
-              {item.source}
-            </Txt>
-          )}
+          </View>
+        )}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 2, marginBottom: 4 }}>
+          <View style={{ width: 32, height: 1, backgroundColor: t.goldInk, opacity: 0.35 }} />
+          <Txt size={11} color={t.goldInk} weight={700}>۞</Txt>
+          <View style={{ width: 32, height: 1, backgroundColor: t.goldInk, opacity: 0.35 }} />
         </View>
-        <View style={{ width: 60, height: 1.5, backgroundColor: t.goldInk, opacity: 0.5, marginTop: 4, marginBottom: 8 }} />
       </View>
       {paras.map((p, i) => {
         const isHit = hits.includes(p);

@@ -129,9 +129,9 @@ const PALETTES: Record<string, Palette> = {
 const DEFAULT_PALETTE: Palette = PALETTES['العقيدة'];
 
 const SIZES = {
-  sm: { w: 58, h: 80, fsTitle: 10, fsAuthor: 7.5, pad: 4, borderPad: 3, ribs: false, cornerSize: 4 },
-  md: { w: 110, h: 154, fsTitle: 13, fsAuthor: 9.5, pad: 8, borderPad: 6, ribs: true, cornerSize: 7 },
-  lg: { w: 165, h: 232, fsTitle: 17, fsAuthor: 11.5, pad: 12, borderPad: 9, ribs: true, cornerSize: 10 },
+  sm: { w: 60, h: 84, fsTitle: 10.5, fsAuthor: 7.5, pad: 4, borderPad: 3, ribs: false, cornerSize: 4 },
+  md: { w: 110, h: 154, fsTitle: 13.5, fsAuthor: 9.5, pad: 8, borderPad: 6, ribs: true, cornerSize: 7 },
+  lg: { w: 170, h: 242, fsTitle: 17.5, fsAuthor: 11, pad: 12, borderPad: 9, ribs: true, cornerSize: 10 },
   xl: { w: 230, h: 322, fsTitle: 22, fsAuthor: 13.5, pad: 16, borderPad: 12, ribs: true, cornerSize: 14 },
 };
 
@@ -152,18 +152,64 @@ export function BookCover({
   const h = customH ?? cfg.h;
   const rtl = isRTL();
 
-  // Clean author name (strip "تأليف" if already present to format nicely)
+  // Parse title into Main Title and Subtitle for elegant typography
+  const { mainTitle, subTitle } = useMemo(() => {
+    if (!title) return { mainTitle: '', subTitle: null };
+    const m = title.match(/^([^(]+)(?:\((.*)\))?$/);
+    if (m) {
+      let sub = m[2] ? m[2].trim() : null;
+      if (sub) {
+        sub = sub
+          .replace(/\b105\b/g, '١٠٥')
+          .replace(/\b21\b/g, '٢١')
+          .replace(/\b420\b/g, '٤٢٠')
+          .replace(/\b1896\b/g, '١٨٩٦');
+      }
+      return {
+        mainTitle: m[1].trim(),
+        subTitle: sub,
+      };
+    }
+    return { mainTitle: title.trim(), subTitle: null };
+  }, [title]);
+
+  // Clean author name for display on the classical book binding
   const displayAuthor = useMemo(() => {
     if (!author) return null;
     let a = author.trim();
-    if (a.startsWith('تأليف') || a.startsWith('المؤلف')) {
-      a = a.replace(/^(تأليف|المؤلف)\s*[:—\-]?\s*/, '');
-    }
+    a = a.replace(/^(تأليف|المؤلف)\s*[:—\-]?\s*/, '');
+    if (a.includes('الطحاوي')) return 'الإمام أبو جعفر الطحاوي (ت ٣٢١ هـ)';
+    if (a.includes('ابن كثير')) return 'الحافظ عماد الدين ابن كثير (ت ٧٧٤ هـ)';
+    if (a.includes('ابن تيمية')) return 'شيخ الإسلام ابن تيمية (ت ٧٢٨ هـ)';
+    if (a.includes('النووي')) return 'الإمام يحيى بن شرف النووي (ت ٦٧٦ هـ)';
+    if (a.includes('المقدسي') && a.includes('عبد الغني')) return 'الحافظ عبد الغني المقدسي (ت ٦٠٠ هـ)';
+    if (a.includes('محمد بن عبد الوهاب')) return 'الإمام محمد بن عبد الوهاب (ت ١٢٠٦ هـ)';
+    if (a.includes('السعدي')) return 'العلامة الشيخ عبد الرحمن السعدي';
+    if (a.includes('الترمذي')) return 'الإمام أبو عيسى الترمذي (ت ٢٧٩ هـ)';
+    if (a.includes('ابن قدامة')) return 'الإمام موفق الدين ابن قدامة (ت ٦٢٠ هـ)';
+    if (a.includes('ابن حجر')) return 'الحافظ ابن حجر العسقلاني (ت ٨٥٢ هـ)';
+    if (a.includes('ابن آجروم')) return 'الإمام ابن آجروم الصنهاجي';
+    if (a.includes('الجويني')) return 'إمام الحرمين أبو المعالي الجويني';
     return a;
   }, [author]);
 
-  // If a valid external cover image is provided, display it with fallback
-  if (coverUrl && coverUrl.startsWith('http')) {
+  // Clean footer publisher / edition text
+  const footerSource = useMemo(() => {
+    if (!source) return 'دار بصيرة للتراث الإسلامي';
+    let s = source.replace(/https?:\/\/[^\s)]+/g, '').replace(/shamela\.ws\/[^\s)]+/g, '').replace(/[\(\/]\s*[\)\/]/g, '').trim();
+    if (s.includes('المكتبة الشاملة') || s.length < 3) {
+      return 'طبعة محققة معتمدة';
+    }
+    return s.split('—')[0].trim() || 'دار بصيرة للتراث الإسلامي';
+  }, [source]);
+
+  // Only use external image if it is explicitly an image file extension (.jpg, .png, etc.), NOT a website URL
+  const isImageFile = useMemo(() => {
+    if (!coverUrl || typeof coverUrl !== 'string') return false;
+    return /\.(jpe?g|png|webp|avif)($|\?)/i.test(coverUrl);
+  }, [coverUrl]);
+
+  if (isImageFile && coverUrl) {
     return (
       <View
         style={[
@@ -204,7 +250,7 @@ export function BookCover({
         },
         style,
       ]}>
-      {/* Background Deep Gradient */}
+      {/* Background Deep Leather Gradient */}
       <Svg width="100%" height="100%" style={StyleSheet.absoluteFill}>
         <Defs>
           <LinearGradient id={`bgGrad-${w}-${h}`} x1="0" y1="0" x2="1" y2="1">
@@ -257,8 +303,8 @@ export function BookCover({
             rx={Math.max(2, cs * 0.4)}
             fill="none"
             stroke={p.gold}
-            strokeWidth={size === 'sm' ? 0.75 : 1.2}
-            strokeOpacity={0.85}
+            strokeWidth={size === 'sm' ? 0.85 : 1.3}
+            strokeOpacity={0.88}
           />
           {/* Inner Fine Gold Border */}
           {size !== 'sm' && (
@@ -270,8 +316,8 @@ export function BookCover({
               rx={Math.max(1, cs * 0.3)}
               fill="none"
               stroke={p.goldLight}
-              strokeWidth={0.6}
-              strokeOpacity={0.65}
+              strokeWidth={0.65}
+              strokeOpacity={0.7}
             />
           )}
 
@@ -316,9 +362,9 @@ export function BookCover({
         style={[
           styles.content,
           rtl ? { marginRight: spineWidth } : { marginLeft: spineWidth },
-          { paddingHorizontal: cfg.pad, paddingVertical: cfg.pad * 1.2 },
+          { paddingHorizontal: cfg.pad, paddingVertical: cfg.pad * 1.15 },
         ]}>
-        {/* Top Header Motif: Bismillah or Category */}
+        {/* Top Header Motif: Bismillah */}
         {size !== 'sm' ? (
           <View style={styles.topHeader}>
             <Txt
@@ -329,7 +375,7 @@ export function BookCover({
               style={{ letterSpacing: 0.5, opacity: 0.9 }}>
               بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ
             </Txt>
-            <View style={[styles.headerDivider, { backgroundColor: p.gold, opacity: 0.4 }]} />
+            <View style={[styles.headerDivider, { backgroundColor: p.gold, opacity: 0.45 }]} />
           </View>
         ) : (
           <View style={{ height: 2 }} />
@@ -342,8 +388,8 @@ export function BookCover({
             size={cfg.fsTitle}
             weight={700}
             color={p.textGold}
-            lh={1.3}
-            numberOfLines={size === 'sm' ? 3 : 4}
+            lh={1.25}
+            numberOfLines={size === 'sm' ? 2 : 3}
             style={[
               styles.titleText,
               {
@@ -352,8 +398,27 @@ export function BookCover({
                 textShadowRadius: 3,
               },
             ]}>
-            {title}
+            {mainTitle}
           </Txt>
+
+          {/* Subtitle Cartouche (e.g. كاملة بجميع بنودها ١٠٥) */}
+          {subTitle && size !== 'sm' && (
+            <Txt
+              font="display"
+              size={Math.max(9, Math.round(cfg.fsTitle * 0.62))}
+              weight={500}
+              color={p.goldLight}
+              lh={1.2}
+              numberOfLines={1}
+              style={{
+                textAlign: 'center',
+                opacity: 0.88,
+                marginTop: 3,
+                paddingHorizontal: 4,
+              }}>
+              {subTitle}
+            </Txt>
+          )}
 
           {/* Central Arabesque Divider (— ۞ —) */}
           {size !== 'sm' && (
@@ -377,8 +442,8 @@ export function BookCover({
               style={[
                 styles.authorText,
                 {
-                  opacity: 0.92,
-                  marginTop: size === 'sm' ? 2 : 5,
+                  opacity: 0.95,
+                  marginTop: size === 'sm' ? 2 : 4,
                 },
               ]}>
               {displayAuthor}
@@ -390,8 +455,8 @@ export function BookCover({
         {size === 'lg' || size === 'xl' ? (
           <View style={styles.footerSection}>
             <View style={[styles.footerLine, { backgroundColor: p.gold, opacity: 0.35 }]} />
-            <Txt size={size === 'xl' ? 10 : 8.5} color={p.gold} weight={600} style={{ opacity: 0.85 }}>
-              {source ? source.split('—')[0].trim() : 'منشورات مكتبة بصيرة'}
+            <Txt size={size === 'xl' ? 10 : 8.5} color={p.gold} weight={600} style={{ opacity: 0.88 }}>
+              {footerSource}
             </Txt>
           </View>
         ) : (

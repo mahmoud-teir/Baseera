@@ -48,6 +48,7 @@ design-source/extracted/
 .env
 .env.local
 /test-results
+scratch/
 /playwright-report
 
 # local tool settings and extracted design copies (the zips are kept)

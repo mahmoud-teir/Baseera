@@ -10,7 +10,8 @@ import { ProgressBar } from '@/components/core/ProgressBar';
 import { Txt } from '@/components/core/Txt';
 import { BackLink, Screen, Title, useTopPad } from '@/components/layout/Screen';
 import { BOOK_CATEGORIES, ICON } from '@/data/structural';
-import { folderId, useLibraryItem } from '@/services/content';
+import { PagedBookReader } from '@/features/encyclopedia/PagedBookReader';
+import { folderId, useLibraryItem, type LibraryItem } from '@/services/content';
 import { DOWNLOAD_ERRORS, downloadsSupported } from '@/services/downloads';
 import { useApp } from '@/state/app-store';
 import { useUi } from '@/state/ui-store';
@@ -20,6 +21,37 @@ import { BOOK_FS } from '@/theme/tokens';
 export default function Book() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { item, loading } = useLibraryItem(id ?? '');
+
+  if (item?.paged || id === 'al-bidayah-wan-nihayah') {
+    const pagedItem: LibraryItem = item ?? {
+      id: 'al-bidayah-wan-nihayah',
+      kind: 'book',
+      category: 'التاريخ الإسلامي',
+      title: 'البداية والنهاية (الموسوعة الكاملة 21 مجلداً)',
+      author: 'الحافظ عماد الدين إسماعيل بن كثير (ت 774هـ)',
+      source: 'دار هجر — تحقيق د. عبد الله بن عبد المحسن التركي',
+      pages: 13078,
+      size_mb: 21.5,
+      paged: true,
+      audio_url: null,
+      chapters: [],
+    };
+    return <PagedBookReader item={pagedItem} />;
+  }
+
+  if (!item) {
+    return (
+      <Screen>
+        <BackLink label="المكتبة" href="/library" />
+        <Title>{loading ? 'جارٍ التحميل…' : 'الكتاب غير متاح'}</Title>
+      </Screen>
+    );
+  }
+
+  return <RegularBookReader item={item} />;
+}
+
+function RegularBookReader({ item }: { item: LibraryItem }) {
   const { t, r, lhBook, cs, font, dark } = useTheme();
   const top = useTopPad(0);
   const bookFs = useApp((s) => s.bookFs);
@@ -44,7 +76,7 @@ export default function Book() {
   const sepia = rt === 'sepia' && !dark;
 
   const paras = useMemo(
-    () => item?.chapters.flatMap((c, ci) => c.paragraphs.map((p, pi) => ({ key: `${ci}:${pi}`, chapter: c.title, text: p, ci }))) ?? [],
+    () => item.chapters.flatMap((c, ci) => c.paragraphs.map((p, pi) => ({ key: `${ci}:${pi}`, chapter: c.title, text: p, ci }))),
     [item]
   );
 
@@ -84,20 +116,11 @@ export default function Book() {
   };
 
   useEffect(() => {
-    if (item) set({ lastBook: { id: item.id, title: item.title, page: 1 } });
+    set({ lastBook: { id: item.id, title: item.title, page: 1 } });
     return () => {
       if (saveProgressTimeout.current) clearTimeout(saveProgressTimeout.current);
     };
   }, [item, set]);
-
-  if (!item) {
-    return (
-      <Screen>
-        <BackLink label="المكتبة" href="/library" />
-        <Title>{loading ? 'جارٍ التحميل…' : 'الكتاب غير متاح'}</Title>
-      </Screen>
-    );
-  }
 
   const backHref = `/library/folder/${folderId('books', Math.max(0, BOOK_CATEGORIES.indexOf(item.category)))}` as const;
   const dlId = `b:${item.id}`;

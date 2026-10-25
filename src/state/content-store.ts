@@ -50,6 +50,8 @@ export const LibraryItemSchema = z.object({
   pages: z.number().int().positive().nullable().default(null),
   audio_url: z.string().url().startsWith('https://').nullable().optional().default(null),
   size_mb: z.number().nullable().default(null),
+  paged: z.boolean().optional(),
+  indexUrl: z.string().optional(),
 });
 export type LibraryItem = z.infer<typeof LibraryItemSchema>;
 

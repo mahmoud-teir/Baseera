@@ -76,7 +76,7 @@ export function Screen({ children, header, footer, gap = 16, padH = 20, padBotto
       contentContainerStyle={[{ paddingTop: noTopPad ? 16 : top, paddingHorizontal: padH, paddingBottom: padBottom, gap }, contentStyle]}
       keyboardShouldPersistTaps="handled"
       onScroll={onScroll}
-      scrollEventThrottle={onScroll ? 200 : undefined}
+      scrollEventThrottle={onScroll ? 16 : undefined}
       showsVerticalScrollIndicator={false}>
       {children}
     </ScrollView>

@@ -128,8 +128,19 @@ function RegularBookReader({ item }: { item: LibraryItem }) {
   const nHl = Object.values(hl).filter(Boolean).length;
   const source = `${item.title}${item.author ? ` — ${item.author}` : ''}${item.source ? ` · ${item.source}` : ''}`;
 
-  const pages = item.pages ?? Math.max(1, item.chapters.length);
-  const page = Math.max(1, Math.ceil(progress * pages));
+  // Authentic page count: ~1000 chars per mobile reading screen
+  const totalChars = useMemo(() => paras.reduce((sum, p) => sum + p.text.length, 0), [paras]);
+  const realPages = useMemo(() => {
+    if (paras.length === 0) return 1;
+    const byTextLength = Math.max(1, Math.ceil(totalChars / 1000));
+    // If item.pages matches digital text within reason (<= 2.5x), respect it
+    if (item.pages && item.pages > 0 && item.pages <= byTextLength * 2.5 && item.pages >= Math.floor(byTextLength * 0.4)) {
+      return item.pages;
+    }
+    return byTextLength;
+  }, [paras.length, totalChars, item.pages]);
+
+  const page = progress <= 0 ? 1 : Math.min(realPages, Math.max(1, Math.ceil(progress * realPages)));
 
   const sendHl = () => {
     paras
@@ -175,7 +186,8 @@ function RegularBookReader({ item }: { item: LibraryItem }) {
 
         if (saveProgressTimeout.current) clearTimeout(saveProgressTimeout.current);
         saveProgressTimeout.current = setTimeout(() => {
-          set({ lastBook: { id: item.id, title: item.title, page: Math.max(1, Math.ceil(pr * pages)) } });
+          const curPage = pr <= 0 ? 1 : Math.min(realPages, Math.max(1, Math.ceil(pr * realPages)));
+          set({ lastBook: { id: item.id, title: item.title, page: curPage } });
         }, 400);
       }}
       header={
@@ -333,11 +345,11 @@ function RegularBookReader({ item }: { item: LibraryItem }) {
             </View>
           )}
           <View style={{ backgroundColor: t.card, borderTopWidth: 1, borderColor: t.line, paddingTop: 10, paddingHorizontal: 20, paddingBottom: 22, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-            <Txt size={14} color={t.muted}>
-              صفحة {page} من {pages}
+            <Txt size={14} color={t.muted} weight={600}>
+              صفحة {page} من {realPages}
             </Txt>
             <View style={{ flex: 1 }}>
-              <ProgressBar value={(page / pages) * 100} height={4} label="موضع القراءة" />
+              <ProgressBar value={progress * 100} animated={false} height={5} label="موضع القراءة" />
             </View>
           </View>
         </>

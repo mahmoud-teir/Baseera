@@ -17,9 +17,10 @@ export interface ProgressBarProps {
   color?: string;
   track?: string;
   label?: string;
+  animated?: boolean;
 }
 
-export function ProgressBar({ value = 0, light = false, height = 6, color, track, label }: ProgressBarProps) {
+export function ProgressBar({ value = 0, light = false, height = 6, color, track, label, animated = true }: ProgressBarProps) {
   const { t, gc, reduceMotion } = useTheme();
   const v = Math.max(0, Math.min(100, value));
   return (
@@ -27,15 +28,15 @@ export function ProgressBar({ value = 0, light = false, height = 6, color, track
       accessibilityRole="progressbar"
       accessibilityLabel={label}
       accessibilityValue={{ min: 0, max: 100, now: Math.round(v) }}
-      style={{ height, borderRadius: 9, backgroundColor: track ?? (light ? 'rgba(255,255,255,0.2)' : t.line), overflow: 'hidden' }}>
+      style={{ height, borderRadius: 9, backgroundColor: track ?? (light ? 'rgba(255,255,255,0.2)' : t.line), overflow: 'hidden', flexDirection: 'row' }}>
       <Animated.View
         style={{
           height,
           width: `${v}%`,
           borderRadius: 9,
           backgroundColor: color ?? (light ? gc : t.primary),
-          transitionProperty: reduceMotion ? 'none' : 'width',
-          transitionDuration: 400,
+          transitionProperty: animated && !reduceMotion ? 'width' : 'none',
+          transitionDuration: animated && !reduceMotion ? 400 : 0,
         }}
       />
     </View>

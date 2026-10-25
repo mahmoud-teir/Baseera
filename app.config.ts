@@ -15,7 +15,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   ...config,
   name: 'بصيرة',
   slug: 'baseerah',
-  version: '1.2.3',
+  version: '1.2.4',
   orientation: 'default',
   icon: './assets/images/icon.png',
   scheme: 'baseerah',
@@ -32,7 +32,7 @@ export default ({ config }: ConfigContext): ExpoConfig => ({
   },
   android: {
     package: `app.baseerah${ID_SUFFIX}`,
-    versionCode: 7,
+    versionCode: 8,
     adaptiveIcon: {
       backgroundColor: '#145C4B',
       foregroundImage: './assets/images/android-icon-foreground.png',

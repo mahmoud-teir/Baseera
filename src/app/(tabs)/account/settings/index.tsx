@@ -18,6 +18,7 @@ import { RoundBackHeader, Screen } from '@/components/layout/Screen';
 import { reciterName } from '@/data/quran';
 import { ICON } from '@/data/structural';
 import { DevicesSheet } from '@/features/account/DevicesSheet';
+import { useStaffRole } from '@/features/admin/useIsStaff';
 import { CityPickerSheet, useLocateAction } from '@/features/prayer/LocationPicker';
 import { deleteAccount, signOut, useSession } from '@/services/auth';
 import { exportData, wipeLocal } from '@/services/export';
@@ -52,6 +53,7 @@ export default function Settings() {
   const flash = useUi((s) => s.flash);
   const openReport = useUi((s) => s.openReport);
   const { session } = useSession();
+  const staffRole = useStaffRole();
   const { locate } = useLocateAction();
   const [open, setOpen] = useState<number | null>(0);
   const [confirm, setConfirm] = useState<string | null>(null);
@@ -212,7 +214,7 @@ export default function Settings() {
       { kind: 'link', label: 'الإشراف العلمي', sub: 'من يراجع المحتوى ومنهجه', tap: () => router.push('/account/settings/supervision') },
       { kind: 'link', label: 'كيف يُموَّل المشروع', sub: 'شفافية المصادر والمصروفات', tap: () => router.push('/account/settings/funding') },
       { kind: 'link', label: 'تواصل معنا واقتراحاتك', tap: () => router.push('/account/settings/contact') },
-      { kind: 'link', label: 'لوحة الإدارة والتحكم', sub: 'إدارة المتون والاعتماد وتحديثات التطبيق', tap: () => router.push('/admin') },
+      ...(staffRole ? [{ kind: 'link', label: 'لوحة الإدارة والتحكم', sub: 'إدارة المتون والاعتماد وتحديثات التطبيق', tap: () => router.push('/admin') } as Row] : []),
       { kind: 'link', label: 'أبلغ عن خطأ في المحتوى', tap: () => openReport('عام · الإعدادات') },
     ],
   ];

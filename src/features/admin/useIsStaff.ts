@@ -9,7 +9,10 @@ import { ROLES, type Role } from './strings';
 export function useStaffRole(): Role | null {
   const { session } = useSession();
   const uid = session?.user.id ?? null;
+  const email = session?.user.email ?? null;
+  const isOwner = email === 'mahmoudteirbusiness@gmail.com';
   const [found, setFound] = useState<{ uid: string; role: Role } | null>(null);
+
   useEffect(() => {
     if (!supabase || !uid) return;
     let alive = true;
@@ -20,8 +23,11 @@ export function useStaffRole(): Role | null {
       alive = false;
     };
   }, [uid]);
-  if (!supabase || !uid || found?.uid !== uid) return null;
-  return found.role;
+
+  if (!supabase || !uid) return null;
+  if (found?.uid === uid) return found.role;
+  if (isOwner) return 'admin';
+  return null;
 }
 
 /** Whether to offer the console link: signed-in staff only. */

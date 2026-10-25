@@ -1,5 +1,5 @@
-import { MobileAdminDashboard } from '@/features/admin/MobileAdminDashboard';
+import { Console } from '@/features/admin/Console';
 
 export default function AdminIndex() {
-  return <MobileAdminDashboard />;
+  return <Console view="queue" />;
 }

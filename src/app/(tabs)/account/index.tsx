@@ -230,7 +230,9 @@ export default function AccountScreen() {
   const staffRole = useStaffRole();
 
   const settingsRows = [
-    { d: ICON.shield, label: 'لوحة الإدارة والتحكم', val: staffRole ? S.ar.roleN[staffRole] : 'إدارة المحتوى والتحديثات', go: () => router.push('/admin') },
+    ...(staffRole
+      ? [{ d: ICON.shield, label: 'لوحة الإدارة والتحكم', val: S.ar.roleN[staffRole], go: () => router.push('/admin') }]
+      : []),
     { d: ICON.download, label: 'التحقق من وجود تحديثات', val: `v${CURRENT_APP_VERSION}`, go: () => useAppUpdater.getState().checkUpdate(false) },
     { d: ICON.bell, label: 'الإشعارات', val: inbox.unread ? `${inbox.unread} جديد` : '', go: () => router.navigate('/account/notifications') },
     { d: ICON.fontSize, label: 'حجم الخط', val: ['عادي', 'كبير', 'أكبر'][fs], go: () => set({ fs: ((fs + 1) % 3) as 0 | 1 | 2 }) },

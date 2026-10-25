@@ -43,24 +43,25 @@ export interface VolumePayload {
 
 const DEFAULT_BASE_URL = 'https://yxqdquynlgfbxyultsux.supabase.co/storage/v1/object/public/apks/encyclopedia/bidayah';
 
-let cachedIndex: EncyclopediaIndex | null = null;
-const memoryVolCache = new Map<number, VolumePayload>();
+const cachedIndices = new Map<string, EncyclopediaIndex>();
+const memoryVolCache = new Map<string, VolumePayload>();
 
 /**
- * Loads the master index of all 20 volumes.
+ * Loads the master index of a chunked book or encyclopedia.
  */
-export async function getEncyclopediaIndex(customUrl?: string): Promise<EncyclopediaIndex> {
-  if (cachedIndex) return cachedIndex;
-
+export async function getEncyclopediaIndex(customUrl?: string, bookId = 'bidayah'): Promise<EncyclopediaIndex> {
   const url = customUrl || `${DEFAULT_BASE_URL}/index.json`;
-  const cacheFile = new File(Paths.cache, 'bidayah_index_v2.json');
+  if (cachedIndices.has(url)) return cachedIndices.get(url)!;
+
+  const cacheFile = new File(Paths.cache, `${bookId}_index_v2.json`);
 
   // Try local cache first
   try {
     if (cacheFile.exists) {
       const text = await cacheFile.text();
-      cachedIndex = JSON.parse(text) as EncyclopediaIndex;
-      return cachedIndex;
+      const parsed = JSON.parse(text) as EncyclopediaIndex;
+      cachedIndices.set(url, parsed);
+      return parsed;
     }
   } catch {
     // ignore cache read error
@@ -73,7 +74,7 @@ export async function getEncyclopediaIndex(customUrl?: string): Promise<Encyclop
   }
 
   const data = (await res.json()) as EncyclopediaIndex;
-  cachedIndex = data;
+  cachedIndices.set(url, data);
 
   try {
     await cacheFile.write(JSON.stringify(data));
@@ -85,22 +86,23 @@ export async function getEncyclopediaIndex(customUrl?: string): Promise<Encyclop
 }
 
 /**
- * Loads a specific volume chunk (1-20).
+ * Loads a specific volume chunk for any chunked book.
  */
-export async function getVolumeChunk(vol: number, baseUrl?: string): Promise<VolumePayload> {
-  if (memoryVolCache.has(vol)) {
-    return memoryVolCache.get(vol)!;
+export async function getVolumeChunk(vol: number, baseUrl?: string, bookId = 'bidayah'): Promise<VolumePayload> {
+  const cacheKey = `${bookId}_${vol}`;
+  if (memoryVolCache.has(cacheKey)) {
+    return memoryVolCache.get(cacheKey)!;
   }
 
   const volStr = String(vol).padStart(2, '0');
-  const cacheFile = new File(Paths.cache, `bidayah_vol_v2_${volStr}.json`);
+  const cacheFile = new File(Paths.cache, `${bookId}_vol_v2_${volStr}.json`);
 
   // Try local file cache
   try {
     if (cacheFile.exists) {
       const text = await cacheFile.text();
       const payload = JSON.parse(text) as VolumePayload;
-      memoryVolCache.set(vol, payload);
+      memoryVolCache.set(cacheKey, payload);
       return payload;
     }
   } catch {
@@ -117,7 +119,7 @@ export async function getVolumeChunk(vol: number, baseUrl?: string): Promise<Vol
   }
 
   const payload = (await res.json()) as VolumePayload;
-  memoryVolCache.set(vol, payload);
+  memoryVolCache.set(cacheKey, payload);
 
   try {
     await cacheFile.write(JSON.stringify(payload));

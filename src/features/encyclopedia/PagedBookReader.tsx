@@ -32,8 +32,6 @@ import { useUi } from '@/state/ui-store';
 import { useTheme } from '@/theme/theme';
 import { BOOK_FS } from '@/theme/tokens';
 
-const STORAGE_KEY_POS = 'baseerah_encyclopedia_pos_bidayah';
-
 interface PosState {
   vol: number;
   chapterIndex: number;
@@ -42,6 +40,10 @@ interface PosState {
 export function PagedBookReader({ item }: { item: LibraryItem }) {
   const { t, r, lhBook, cs, font, dark, pc } = useTheme();
   const top = useTopPad(0);
+
+  const bookKey = item.id || 'bidayah';
+  const storageKeyPos = `baseerah_encyclopedia_pos_${bookKey}`;
+  const baseUrl = useMemo(() => (item.indexUrl ? item.indexUrl.replace(/\/index\.json$/, '') : undefined), [item.indexUrl]);
 
   const bookFs = useApp((s) => s.bookFs);
   const rt = useApp((s) => s.rt);
@@ -79,8 +81,8 @@ export function PagedBookReader({ item }: { item: LibraryItem }) {
     (async () => {
       try {
         const [idx, savedPos] = await Promise.all([
-          getEncyclopediaIndex(item.indexUrl),
-          AsyncStorage.getItem(STORAGE_KEY_POS),
+          getEncyclopediaIndex(item.indexUrl, bookKey),
+          AsyncStorage.getItem(storageKeyPos),
         ]);
         if (alive) {
           setIndex(idx);
@@ -108,7 +110,7 @@ export function PagedBookReader({ item }: { item: LibraryItem }) {
     return () => {
       alive = false;
     };
-  }, [item.indexUrl, flash]);
+  }, [item.indexUrl, bookKey, storageKeyPos, flash]);
 
   // 2. Load Volume Chunk whenever activeVol changes
   useEffect(() => {
@@ -120,7 +122,7 @@ export function PagedBookReader({ item }: { item: LibraryItem }) {
       setHl({});
       setQ('');
       try {
-        const payload = await getVolumeChunk(activeVol);
+        const payload = await getVolumeChunk(activeVol, baseUrl, bookKey);
         if (alive) {
           setVolPayload(payload);
           setVolLoading(false);
@@ -138,20 +140,20 @@ export function PagedBookReader({ item }: { item: LibraryItem }) {
     return () => {
       alive = false;
     };
-  }, [activeVol, flash]);
+  }, [activeVol, baseUrl, bookKey, flash]);
 
   // 3. Save position on change
   useEffect(() => {
     const pos: PosState = { vol: activeVol, chapterIndex: activeChapterIdx };
-    void AsyncStorage.setItem(STORAGE_KEY_POS, JSON.stringify(pos));
+    void AsyncStorage.setItem(storageKeyPos, JSON.stringify(pos));
     set({
       lastBook: {
         id: item.id,
-        title: `البداية والنهاية (م ${activeVol})`,
+        title: `${item.title} (م ${activeVol})`,
         page: activeChapterIdx + 1,
       },
     });
-  }, [activeVol, activeChapterIdx, item.id, set]);
+  }, [activeVol, activeChapterIdx, item.id, item.title, storageKeyPos, set]);
 
   // Chapters with "مقدمة المجلد" stripped out completely
   const chapters = useMemo(() => {
@@ -183,7 +185,7 @@ export function PagedBookReader({ item }: { item: LibraryItem }) {
   const selectedCount = Object.values(hl).filter(Boolean).length;
   const sendHighlightsToNotes = () => {
     if (!currentChapter || !volPayload) return;
-    const sourceInfo = `البداية والنهاية · الحافظ ابن كثير · المجلد ${activeVol} (${currentChapter.title} · ص ${currentChapter.page})`;
+    const sourceInfo = `${item.title} · ${item.author || ''} · المجلد ${activeVol} (${currentChapter.title} · ص ${currentChapter.page})`;
     parasWithHit
       .filter((p) => hl[p.index])
       .forEach((p) => {
@@ -233,7 +235,7 @@ export function PagedBookReader({ item }: { item: LibraryItem }) {
         <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 14 }}>
           <ActivityIndicator size="large" color={pc} />
           <Txt size={15} color={t.muted}>
-            جارٍ تهيئة فهرس موسوعة البداية والنهاية...
+            جارٍ تهيئة فهرس {item.title}...
           </Txt>
         </View>
       </Screen>
@@ -287,7 +289,7 @@ export function PagedBookReader({ item }: { item: LibraryItem }) {
                 </Txt>
               </Press>
 
-              <Press onPress={() => openReport(`موسوعة البداية والنهاية · مجلد ${activeVol}`)} label="إبلاغ" style={smallBtn}>
+              <Press onPress={() => openReport(`${item.title} · مجلد ${activeVol}`)} label="إبلاغ" style={smallBtn}>
                 <Icon d={ICON.flag} size={18} color={t.muted} sw={2.2} />
               </Press>
             </View>
@@ -296,7 +298,7 @@ export function PagedBookReader({ item }: { item: LibraryItem }) {
           {/* Title & Volume summary */}
           <View style={{ gap: 2 }}>
             <Txt font="display" size={22} weight={700} accessibilityRole="header" numberOfLines={1}>
-              البداية والنهاية
+              {item.title}
             </Txt>
             <Txt size={12} color={t.muted} numberOfLines={1}>
               {volTitle}
@@ -465,7 +467,7 @@ export function PagedBookReader({ item }: { item: LibraryItem }) {
           })}
 
           <View style={{ alignItems: 'center', paddingTop: 20 }}>
-            <ReportLink where={`البداية والنهاية · مجلد ${activeVol} · باب ${currentChapter?.title}`} label="أبلغ عن ملاحظة أو خطأ في هذا الباب" />
+            <ReportLink where={`${item.title} · مجلد ${activeVol} · باب ${currentChapter?.title}`} label="أبلغ عن ملاحظة أو خطأ في هذا الباب" />
           </View>
         </View>
       )}
@@ -477,10 +479,10 @@ export function PagedBookReader({ item }: { item: LibraryItem }) {
             <View style={{ padding: 16, borderBottomWidth: 1, borderColor: t.line, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
               <View style={{ gap: 2 }}>
                 <Txt size={17} weight={700}>
-                  فهرس مجلدات البداية والنهاية (20 مجلداً)
+                  فهرس أجزاء ومجلدات {item.title} ({index?.totalVolumes || 0} مجلداً)
                 </Txt>
                 <Txt size={12} color={t.muted}>
-                  طبعة دار هجر المحققة — 13,078 صفحة كاملة
+                  {index?.edition || item.source || 'النسخة المحققة المعتمدة'} · {index?.totalPages || item.pages || 0} صفحة كاملة
                 </Txt>
               </View>
               <Press onPress={() => setVolModalOpen(false)} label="إغلاق">

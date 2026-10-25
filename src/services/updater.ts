@@ -107,14 +107,8 @@ export async function publishRemoteUpdate(
     const { data: sessionData } = await supabase.auth.getSession();
     const currentEmail = sessionData?.session?.user?.email;
 
-    if (currentEmail !== 'mahmoudteirbusiness@gmail.com') {
-      const { error: authErr } = await supabase.auth.signInWithPassword({
-        email: 'mahmoudteirbusiness@gmail.com',
-        password: 'M!a@h#m1o2u3d4',
-      });
-      if (authErr) {
-        return { success: false, error: 'فشل التحقق من صلاحيات المدير: ' + authErr.message };
-      }
+    if (!currentEmail) {
+      return { success: false, error: 'يجب تسجيل الدخول كمسؤول لنشر التحديثات.' };
     }
 
     // 2. Publish via CMS RPC pipeline (authorized for admin)
@@ -165,6 +159,22 @@ export async function publishRemoteUpdate(
     return { success: false, error: 'تعذر الحصول على معرّف المسودة.' };
   } catch (err) {
     return { success: false, error: err instanceof Error ? err.message : String(err) };
+  }
+}
+
+/**
+ * Automatically cleans up any leftover downloaded update APK file in cache.
+ */
+export function cleanupDownloadedApk(): void {
+  try {
+    if (Platform.OS === 'android') {
+      const destination = new File(Paths.cache, 'baseerah-update.apk');
+      if (destination.exists) {
+        destination.delete();
+      }
+    }
+  } catch {
+    // Ignore cleanup error
   }
 }
 

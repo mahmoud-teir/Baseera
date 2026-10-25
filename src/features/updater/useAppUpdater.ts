@@ -5,6 +5,7 @@ import { create } from 'zustand';
 
 import {
   checkRemoteUpdate,
+  cleanupDownloadedApk,
   downloadAndInstallApk,
   type AppUpdateData,
 } from '@/services/updater';
@@ -39,6 +40,7 @@ export const useAppUpdater = create<UpdaterState>((set, get) => ({
   error: null,
 
   checkUpdate: async (silent = true) => {
+    cleanupDownloadedApk();
     set({ isChecking: true, error: null });
     try {
       const data = await checkRemoteUpdate();

@@ -153,7 +153,13 @@ export function PagedBookReader({ item }: { item: LibraryItem }) {
     });
   }, [activeVol, activeChapterIdx, item.id, set]);
 
-  const currentChapter: VolumeChapter | undefined = volPayload?.chapters[activeChapterIdx];
+  // Chapters with "مقدمة المجلد" stripped out completely
+  const chapters = useMemo(() => {
+    if (!volPayload) return [];
+    return volPayload.chapters.filter((c) => c.title !== 'مقدمة المجلد');
+  }, [volPayload]);
+
+  const currentChapter: VolumeChapter | undefined = chapters[activeChapterIdx] ?? chapters[0];
 
   // Search filtering in current chapter + Clean meta lines
   const parasWithHit = useMemo(() => {
@@ -188,8 +194,7 @@ export function PagedBookReader({ item }: { item: LibraryItem }) {
   };
 
   const handleNextChapter = () => {
-    if (!volPayload) return;
-    if (activeChapterIdx < volPayload.chapters.length - 1) {
+    if (activeChapterIdx < chapters.length - 1) {
       setActiveChapterIdx(activeChapterIdx + 1);
       scrollRef.current?.scrollTo({ y: 0, animated: true });
     } else if (activeVol < (index?.totalVolumes ?? 20)) {
@@ -236,7 +241,7 @@ export function PagedBookReader({ item }: { item: LibraryItem }) {
   }
 
   const volTitle = index?.volumes[activeVol - 1]?.title ?? `المجلد ${activeVol}`;
-  const totalChaptersInVol = volPayload?.chapters.length ?? 1;
+  const totalChaptersInVol = chapters.length || 1;
 
   return (
     <Screen
@@ -543,7 +548,7 @@ export function PagedBookReader({ item }: { item: LibraryItem }) {
             </View>
 
             <ScrollView contentContainerStyle={{ padding: 14, gap: 8 }}>
-              {volPayload?.chapters.map((c, idx) => {
+              {chapters.map((c, idx) => {
                 const isCurrent = idx === activeChapterIdx;
                 return (
                   <Press

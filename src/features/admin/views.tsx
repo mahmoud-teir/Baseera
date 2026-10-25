@@ -8,6 +8,7 @@ import { METHOD_LABEL, plannedCount, type Curriculum, type PrayerConfig } from '
 import { useLayout } from '@/theme/layout';
 
 import { Range, Select } from './controls';
+import { BookCover } from '@/features/library/BookCover';
 import { download, exportRows } from './download';
 import { ContentEditor, emptyData } from './editor';
 import { allowed, can, chipFor, isPending, kindLabel, mine } from './logic';
@@ -255,6 +256,11 @@ function Detail({ it, editing, setEditing }: { it: Item; editing: boolean; setEd
         </Chip>
       </View>
       <Stepper it={it} />
+      {it.ckind === 'book' && !editing ? (
+        <View style={{ alignItems: 'center', marginVertical: 14 }}>
+          <BookCover title={it.title} author={d.author ? String(d.author) : null} category={d.category ? String(d.category) : null} source={d.source ? String(d.source) : null} size="md" />
+        </View>
+      ) : null}
       {it.live && it.stage < 2 ? (
         <T size={12} color={C.goldInk} style={{ marginBottom: 10 }}>
           {L.liveVersion}

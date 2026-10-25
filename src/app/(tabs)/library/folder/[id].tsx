@@ -9,6 +9,7 @@ import { Txt } from '@/components/core/Txt';
 import { BackLink, Note, Screen } from '@/components/layout/Screen';
 import { Lattice } from '@/components/layout/Ornament';
 import { AUDIO_CATEGORIES, BOOK_CATEGORIES, ICON } from '@/data/structural';
+import { BookCover } from '@/features/library/BookCover';
 import { artOf, Shade } from '@/features/library/FolderCover';
 import { folderId, parseFolder, useLibrary } from '@/services/content';
 import { edge } from '@/theme/layout';
@@ -56,10 +57,22 @@ export default function Folder() {
             onPress={() => router.push(x.kind === 'book' ? `/book/${x.id}` : `/player/${x.id}`)}
             label={x.title}
             style={{ backgroundColor: t.card, borderWidth: 1, borderColor: t.line, borderRadius: r(18), padding: 10, flexDirection: 'row', gap: 12, alignItems: 'center' }}>
-            <View style={{ width: 58, height: 76, borderRadius: 10, backgroundColor: art.color, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
-              <Lattice opacity={0.18} spacing={22} />
-              <Icon d={art.icon} size={28} color={gc} sw={1.7} />
-            </View>
+            {x.kind === 'book' ? (
+              <BookCover
+                title={x.title}
+                author={x.author}
+                category={x.category}
+                source={x.source}
+                size="sm"
+                width={58}
+                height={80}
+              />
+            ) : (
+              <View style={{ width: 58, height: 76, borderRadius: 10, backgroundColor: art.color, overflow: 'hidden', alignItems: 'center', justifyContent: 'center' }}>
+                <Lattice opacity={0.18} spacing={22} />
+                <Icon d={art.icon} size={28} color={gc} sw={1.7} />
+              </View>
+            )}
             <View style={{ flex: 1, gap: 3 }}>
               <Txt size={17} weight={600}>
                 {x.title}

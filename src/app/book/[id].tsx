@@ -10,6 +10,7 @@ import { ProgressBar } from '@/components/core/ProgressBar';
 import { Txt } from '@/components/core/Txt';
 import { BackLink, Screen, Title, useTopPad } from '@/components/layout/Screen';
 import { BOOK_CATEGORIES, ICON } from '@/data/structural';
+import { BookCover } from '@/features/library/BookCover';
 import { PagedBookReader } from '@/features/encyclopedia/PagedBookReader';
 import { folderId, useLibraryItem, type LibraryItem } from '@/services/content';
 import { DOWNLOAD_ERRORS, downloadsSupported } from '@/services/downloads';
@@ -354,6 +355,33 @@ function RegularBookReader({ item }: { item: LibraryItem }) {
           </View>
         </>
       }>
+      {/* Book Frontispiece Typographic Cover */}
+      <View style={{ alignItems: 'center', marginVertical: 18, gap: 10 }}>
+        <BookCover
+          title={item.title}
+          author={item.author}
+          category={item.category}
+          source={item.source}
+          coverUrl={item.url}
+          size="lg"
+        />
+        <View style={{ alignItems: 'center', gap: 4, maxWidth: 320 }}>
+          <Txt font="display" size={22} weight={700} lh={1.3} style={{ textAlign: 'center' }}>
+            {item.title}
+          </Txt>
+          {item.author && (
+            <Txt size={14} color={t.muted} style={{ textAlign: 'center' }}>
+              {item.author}
+            </Txt>
+          )}
+          {item.source && (
+            <Txt size={12} color={t.goldInk} weight={500} style={{ textAlign: 'center' }}>
+              {item.source}
+            </Txt>
+          )}
+        </View>
+        <View style={{ width: 60, height: 1.5, backgroundColor: t.goldInk, opacity: 0.5, marginTop: 4, marginBottom: 8 }} />
+      </View>
       {paras.map((p, i) => {
         const isHit = hits.includes(p);
         const isActiveHit = hits[activeHitIndex]?.key === p.key;

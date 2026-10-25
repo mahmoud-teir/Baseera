@@ -13,6 +13,7 @@ import { ProgressBar } from '@/components/core/ProgressBar';
 import { Txt } from '@/components/core/Txt';
 import { Note, Screen, Title } from '@/components/layout/Screen';
 import { AUDIO_CATEGORIES, BOOK_CATEGORIES, DOWNLOAD_QUOTA_MB, ICON } from '@/data/structural';
+import { BookCover } from '@/features/library/BookCover';
 import { FolderCover } from '@/features/library/FolderCover';
 import { folderId, useLibrary } from '@/services/content';
 import { deleteDownload, downloadsSupported } from '@/services/downloads';
@@ -121,6 +122,7 @@ export default function Library() {
         <>
           {tab === 'books' && !qq && lastBook && (
             <Card variant="app" radius={18} pad={0} onPress={() => router.push(`/book/${lastBook.id}`)} label={`تابع القراءة: ${lastBook.title}`} style={{ paddingVertical: 12, paddingHorizontal: 14, flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <BookCover title={lastBook.title} size="sm" width={52} height={72} />
               <View style={{ flex: 1, gap: 2 }}>
                 <Txt size={14} weight={600} color={t.goldInk}>
                   تابع من حيث توقفت

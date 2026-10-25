@@ -318,7 +318,7 @@ export const useAdmin = create<AdminState>()((set, get) => {
 
   return {
     status: supabase ? 'idle' : 'unconfigured',
-    lang: 'en',
+    lang: 'ar',
     role: 'admin',
     myRole: null,
     myName: '',

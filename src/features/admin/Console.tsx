@@ -5,6 +5,7 @@ import { Platform, ScrollView, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { useSession } from '@/services/auth';
+import { useLayout } from '@/theme/layout';
 import { useMounted } from '@/utils/useMounted';
 
 import { AppUpdatesView } from './AppUpdatesView';
@@ -105,6 +106,7 @@ function Gate({ busy, state, onRetry }: { busy?: boolean; state?: string; onRetr
 
 function Shell({ requested }: { requested: ViewId }) {
   const insets = useSafeAreaInsets();
+  const { wide } = useLayout();
   const { lang, role, myRole, items, toast, setLang, setRole } = useAdmin();
   const L = S[lang];
   const rtl = lang === 'ar';
@@ -205,77 +207,188 @@ function Shell({ requested }: { requested: ViewId }) {
 
   return (
     <View style={{ flex: 1 }}>
-      {/* Top bar */}
-      <View style={{ backgroundColor: C.green, paddingTop: insets.top + 10, paddingBottom: 10, paddingHorizontal: 24, minHeight: 64, flexDirection: 'row', alignItems: 'center', flexWrap: 'wrap', columnGap: 20, rowGap: 10, zIndex: 20 }}>
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: C.gold, alignItems: 'center', justifyContent: 'center' }}>
-            <T display size={22} color={C.green} style={{ lineHeight: 34 }}>
-              ب
+      {/* Responsive Header */}
+      {wide ? (
+        // Desktop / Tablet Header
+        <View style={{ backgroundColor: C.greenDark, paddingTop: insets.top + 10, paddingBottom: 12, paddingHorizontal: 24, minHeight: 64, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', zIndex: 20, borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.08)' }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+            <P onPress={() => router.replace('/')} label={rtl ? 'العودة للتطبيق' : 'Back to app'} style={{ flexDirection: 'row', alignItems: 'center', gap: 6, paddingVertical: 6, paddingHorizontal: 12, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.1)' }}>
+              <T size={13} color={C.white} w={500}>{rtl ? '‹ التطبيق' : '‹ App'}</T>
+            </P>
+            <View style={{ width: 34, height: 34, borderRadius: 10, backgroundColor: C.gold, alignItems: 'center', justifyContent: 'center' }}>
+              <T display size={22} color={C.green} style={{ lineHeight: 34 }}>
+                ب
+              </T>
+            </View>
+            <T display size={22} color={C.white} accessibilityRole="header">
+              {L.brand}
             </T>
           </View>
-          <T display size={20} color={C.white} accessibilityRole="header">
-            {L.brand}
-          </T>
-        </View>
-        <View style={{ flexDirection: 'row', gap: 4, flexGrow: 1, flexShrink: 1, minWidth: 0, flexWrap: 'wrap' }} accessibilityRole="tablist">
-          {secs.map((s) => (
+
+          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }} accessibilityRole="tablist">
+            {secs.map((s) => (
+              <P
+                key={s}
+                label={L[s]}
+                accessibilityRole="tab"
+                accessibilityState={{ selected: s === sec }}
+                onPress={() => go(allowedViews.find((v) => v.sec === s)!.id)}
+                hoverStyle={{ backgroundColor: 'rgba(255,255,255,.14)' }}
+                style={{ paddingVertical: 8, paddingHorizontal: 16, borderRadius: 10, backgroundColor: s === sec ? C.gold : 'transparent' }}>
+                <T w={600} color={s === sec ? '#2a2008' : C.white}>
+                  {L[s]}
+                </T>
+              </P>
+            ))}
+          </View>
+
+          <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
             <P
-              key={s}
-              label={L[s]}
-              accessibilityRole="tab"
-              accessibilityState={{ selected: s === sec }}
-              onPress={() => go(allowedViews.find((v) => v.sec === s)!.id)}
-              hoverStyle={{ backgroundColor: 'rgba(255,255,255,.14)' }}
-              style={{ paddingVertical: 8, paddingHorizontal: 14, borderRadius: 8, backgroundColor: s === sec ? 'rgba(255,255,255,.18)' : 'transparent' }}>
-              <T w={500} color={C.white}>
-                {L[s]}
+              label={L.search}
+              onPress={() => {
+                setQ('');
+                setSearch(true);
+              }}
+              style={barBtn}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                <T size={13} color={C.white}>
+                  {L.search}
+                </T>
+                {Platform.OS === 'web' ? (
+                  <View style={{ borderWidth: 1, borderColor: 'rgba(255,255,255,.3)', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 1, opacity: 0.7 }}>
+                    <T size={11} color={C.white} ltr>
+                      ⌘K
+                    </T>
+                  </View>
+                ) : null}
+              </View>
+            </P>
+            <View style={{ zIndex: 30 }}>
+              <P label={`${L.notif} · ${pending.length}`} onPress={() => setBell(!bell)} accessibilityState={{ expanded: bell }} style={barBtn}>
+                <T size={13} color={C.white}>{`${L.notif} · ${pending.length}`}</T>
+              </P>
+              {bell ? (
+                <View
+                  style={{
+                    position: 'absolute',
+                    top: 44,
+                    ...ie.end(0),
+                    width: 300,
+                    backgroundColor: C.white,
+                    borderWidth: 1,
+                    borderColor: C.line,
+                    borderRadius: 14,
+                    padding: 8,
+                    zIndex: 30,
+                    elevation: 12,
+                    shadowColor: '#000',
+                    shadowOpacity: 0.16,
+                    shadowRadius: 32,
+                    shadowOffset: { width: 0, height: 12 },
+                  }}>
+                  {notifs.map((n) => (
+                    <P key={n.it.id + n.t} label={n.t} onPress={() => openItem(n.it)} hoverStyle={{ backgroundColor: C.ivory }} style={{ paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8 }}>
+                      <T size={13}>{n.t}</T>
+                      <T size={11} color={C.sub} style={{ marginTop: 2 }}>
+                        {n.s}
+                      </T>
+                    </P>
+                  ))}
+                  {!notifs.length ? (
+                    <T size={13} color={C.sub} style={{ padding: 12 }}>
+                      {L.empty}
+                    </T>
+                  ) : null}
+                </View>
+              ) : null}
+            </View>
+            <Select dark label={L.roleN[role]} value={role} disabled={roleLocked} options={ROLES.map((r) => ({ value: r, label: L.roleN[r] }))} onChange={(r) => setRole(r as typeof role)} />
+            <P label={L.langBtn} onPress={() => setLang(rtl ? 'en' : 'ar')} style={barBtn}>
+              <T size={13} color={C.white} ltr={!rtl}>
+                {L.langBtn}
               </T>
             </P>
-          ))}
+          </View>
         </View>
-        <P
-          label={L.search}
-          onPress={() => {
-            setQ('');
-            setSearch(true);
-          }}
-          style={barBtn}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-            <T size={13} color={C.white}>
-              {L.search}
-            </T>
-            {Platform.OS === 'web' ? (
-              <View style={{ borderWidth: 1, borderColor: 'rgba(255,255,255,.3)', borderRadius: 4, paddingHorizontal: 5, paddingVertical: 1, opacity: 0.7 }}>
-                <T size={11} color={C.white} ltr>
-                  ⌘K
+      ) : (
+        // Mobile Header (Clean, Dedicated, Non-wrapping!)
+        <View style={{ backgroundColor: C.greenDark, paddingTop: insets.top + 8, paddingBottom: 10, zIndex: 20 }}>
+          {/* Mobile Top Row: Back button, Logo, Brand, and Tools */}
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, marginBottom: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flexShrink: 1 }}>
+              <P onPress={() => router.replace('/')} label={rtl ? 'العودة للتطبيق' : 'Back to app'} style={{ flexDirection: 'row', alignItems: 'center', gap: 4, paddingVertical: 5, paddingHorizontal: 10, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.12)' }}>
+                <T size={12} color={C.white} w={600}>{rtl ? '‹ التطبيق' : '‹ App'}</T>
+              </P>
+              <View style={{ width: 30, height: 30, borderRadius: 8, backgroundColor: C.gold, alignItems: 'center', justifyContent: 'center' }}>
+                <T display size={19} color={C.green} style={{ lineHeight: 30 }}>
+                  ب
                 </T>
               </View>
-            ) : null}
+              <T display size={18} color={C.white} numberOfLines={1}>
+                {L.brand}
+              </T>
+            </View>
+
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <P
+                label={L.search}
+                onPress={() => {
+                  setQ('');
+                  setSearch(true);
+                }}
+                style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.1)' }}>
+                <T size={13} color={C.white}>
+                  🔍
+                </T>
+              </P>
+              <P
+                label={L.notif}
+                onPress={() => setBell(!bell)}
+                style={{ paddingHorizontal: 10, paddingVertical: 6, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.1)', flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                <T size={12} color={C.white}>
+                  🔔
+                </T>
+                {pending.length > 0 ? (
+                  <View style={{ backgroundColor: C.gold, borderRadius: 8, paddingHorizontal: 5, paddingVertical: 1 }}>
+                    <T size={10} w={700} color="#2a2008">
+                      {pending.length}
+                    </T>
+                  </View>
+                ) : null}
+              </P>
+              <Select dark label={L.roleN[role]} value={role} disabled={roleLocked} options={ROLES.map((r) => ({ value: r, label: L.roleN[r] }))} onChange={(r) => setRole(r as typeof role)} />
+              <P label={L.langBtn} onPress={() => setLang(rtl ? 'en' : 'ar')} style={{ paddingHorizontal: 9, paddingVertical: 6, borderRadius: 8, backgroundColor: 'rgba(255,255,255,0.1)' }}>
+                <T size={12} color={C.white} w={600}>
+                  {rtl ? 'EN' : 'ع'}
+                </T>
+              </P>
+            </View>
           </View>
-        </P>
-        <View style={{ zIndex: 30 }}>
-          <P label={`${L.notif} · ${pending.length}`} onPress={() => setBell(!bell)} accessibilityState={{ expanded: bell }} style={barBtn}>
-            <T size={13} color={C.white}>{`${L.notif} · ${pending.length}`}</T>
-          </P>
+
+          {/* Mobile Notifications dropdown */}
           {bell ? (
             <View
               style={{
                 position: 'absolute',
-                top: 44,
-                ...ie.end(0),
-                width: 300,
+                top: insets.top + 52,
+                ...ie.end(16),
+                width: 320,
                 backgroundColor: C.white,
                 borderWidth: 1,
                 borderColor: C.line,
-                borderRadius: 12,
+                borderRadius: 14,
                 padding: 8,
-                zIndex: 30,
-                elevation: 12,
+                zIndex: 40,
+                elevation: 16,
                 shadowColor: '#000',
-                shadowOpacity: 0.16,
-                shadowRadius: 32,
-                shadowOffset: { width: 0, height: 12 },
+                shadowOpacity: 0.2,
+                shadowRadius: 24,
+                shadowOffset: { width: 0, height: 10 },
               }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingHorizontal: 10, paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: C.lineSoft }}>
+                <T size={13} w={600} color={C.green}>{L.notif}</T>
+                <P onPress={() => setBell(false)} label="close"><T size={12} color={C.sub}>✕</T></P>
+              </View>
               {notifs.map((n) => (
                 <P key={n.it.id + n.t} label={n.t} onPress={() => openItem(n.it)} hoverStyle={{ backgroundColor: C.ivory }} style={{ paddingVertical: 10, paddingHorizontal: 12, borderRadius: 8 }}>
                   <T size={13}>{n.t}</T>
@@ -291,18 +404,37 @@ function Shell({ requested }: { requested: ViewId }) {
               ) : null}
             </View>
           ) : null}
+
+          {/* Mobile Sections Tab Bar */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, gap: 8 }}>
+            {secs.map((s) => {
+              const active = s === sec;
+              return (
+                <P
+                  key={s}
+                  label={L[s]}
+                  accessibilityRole="tab"
+                  accessibilityState={{ selected: active }}
+                  onPress={() => go(allowedViews.find((v) => v.sec === s)!.id)}
+                  style={{
+                    paddingVertical: 7,
+                    paddingHorizontal: 15,
+                    borderRadius: 20,
+                    backgroundColor: active ? C.gold : 'rgba(255,255,255,0.12)',
+                  }}>
+                  <T size={13} w={active ? 700 : 500} color={active ? '#2a2008' : C.white}>
+                    {L[s]}
+                  </T>
+                </P>
+              );
+            })}
+          </ScrollView>
         </View>
-        <Select dark label={L.roleN[role]} value={role} disabled={roleLocked} options={ROLES.map((r) => ({ value: r, label: L.roleN[r] }))} onChange={(r) => setRole(r as typeof role)} />
-        <P label={L.langBtn} onPress={() => setLang(rtl ? 'en' : 'ar')} style={barBtn}>
-          <T size={13} color={C.white} ltr={!rtl}>
-            {L.langBtn}
-          </T>
-        </P>
-      </View>
+      )}
 
       {/* Section sub-tabs */}
-      <View style={{ backgroundColor: C.white, borderBottomWidth: 1, borderBottomColor: C.line }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 24, gap: 6 }} accessibilityRole="tablist">
+      <View style={{ backgroundColor: C.white, borderBottomWidth: 1, borderBottomColor: C.line, shadowColor: '#000', shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.03, elevation: 1 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: wide ? 24 : 16, gap: 8, paddingVertical: 4 }} accessibilityRole="tablist">
           {subs.map((v) => (
             <P
               key={v.id}
@@ -310,8 +442,15 @@ function Shell({ requested }: { requested: ViewId }) {
               accessibilityRole="tab"
               accessibilityState={{ selected: v.id === view }}
               onPress={() => go(v.id)}
-              style={{ paddingTop: 14, paddingBottom: 12, paddingHorizontal: 12, borderBottomWidth: 2, borderBottomColor: v.id === view ? C.green : 'transparent' }}>
-              <T w={500} color={v.id === view ? C.green : C.sub}>
+              style={{
+                paddingVertical: wide ? 12 : 9,
+                paddingHorizontal: 14,
+                borderRadius: 10,
+                backgroundColor: v.id === view ? C.greenSoft : 'transparent',
+                borderBottomWidth: wide ? 2 : 0,
+                borderBottomColor: v.id === view ? C.green : 'transparent',
+              }}>
+              <T size={13} w={v.id === view ? 700 : 500} color={v.id === view ? C.green : C.sub}>
                 {L[v.id]}
               </T>
             </P>

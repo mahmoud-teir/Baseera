@@ -11,24 +11,26 @@ import type { Mutable } from '@/utils/types';
 
 export const C = {
   green: '#145C4B',
-  greenDark: '#0d4538',
+  greenDark: '#0C382D',
+  greenSoft: '#E7F2EE',
   gold: '#C4A66A',
-  goldInk: '#8a6d2b',
-  ivory: '#FAF8F2',
-  ink: '#1d2a26',
-  sub: '#6b7770',
-  faint: '#8a8f8b',
-  line: '#E6E0D2',
-  lineSoft: '#F0EADB',
-  field: '#D8D0BC',
+  goldInk: '#7A5F26',
+  goldSoft: '#F6F1E3',
+  ivory: '#FAF7F0',
+  ink: '#182D29',
+  sub: '#5E6E67',
+  faint: '#8A9793',
+  line: '#E6DFC8',
+  lineSoft: '#EFE9DA',
+  field: '#D8CFAF',
   sand: '#F3EBD6',
   sandSoft: '#F6F1E3',
   paper: '#FCFAF4',
   muted: '#EFE9DA',
   okBg: '#E4F2EC',
   errBg: '#FBE9E7',
-  errInk: '#8a2b1f',
-  white: '#fff',
+  errInk: '#8A2B1F',
+  white: '#FFFFFF',
 };
 
 export const F = {
@@ -107,7 +109,25 @@ export function Title({ children }: { children: ReactNode }) {
 }
 
 export function Card({ style, children }: { style?: StyleProp<ViewStyle>; children: ReactNode }) {
-  return <View style={[{ backgroundColor: C.white, borderWidth: 1, borderColor: C.line, borderRadius: 14 }, style]}>{children}</View>;
+  return (
+    <View
+      style={[
+        {
+          backgroundColor: C.white,
+          borderWidth: 1,
+          borderColor: C.line,
+          borderRadius: 16,
+          shadowColor: '#143C30',
+          shadowOffset: { width: 0, height: 3 },
+          shadowOpacity: 0.05,
+          shadowRadius: 10,
+          elevation: 2,
+        },
+        style,
+      ]}>
+      {children}
+    </View>
+  );
 }
 
 export type ChipTone = 'ok' | 'muted' | 'warn' | 'err';
@@ -116,7 +136,7 @@ const CHIP: Record<ChipTone, [string, string]> = { ok: [C.okBg, C.green], muted:
 export function Chip({ tone, children, big }: { tone: ChipTone; children: string; big?: boolean }) {
   const [bg, fg] = CHIP[tone];
   return (
-    <View style={{ backgroundColor: bg, borderRadius: 999, paddingVertical: big ? 4 : 3, paddingHorizontal: big ? 12 : 10, alignSelf: 'flex-start' }}>
+    <View style={{ backgroundColor: bg, borderRadius: 999, paddingVertical: big ? 5 : 4, paddingHorizontal: big ? 14 : 10, alignSelf: 'flex-start' }}>
       <T size={big ? 12 : 11} w={600} color={fg} numberOfLines={1}>
         {children}
       </T>
@@ -134,7 +154,7 @@ export function Pill({ label, active, onPress, tone = 'green', round, a11yLabel 
       onPress={onPress}
       label={a11yLabel ?? label}
       accessibilityState={{ selected: !!active }}
-      style={{ borderRadius: round ? 999 : 8, paddingVertical: 6, paddingHorizontal: round ? 14 : 16, borderWidth: 1, borderColor: active ? on.bg : C.field, backgroundColor: s.bg }}>
+      style={{ borderRadius: round ? 999 : 10, paddingVertical: 7, paddingHorizontal: round ? 16 : 14, borderWidth: 1, borderColor: active ? on.bg : C.field, backgroundColor: s.bg }}>
       <T size={13} w={500} color={s.fg}>
         {label}
       </T>
@@ -144,13 +164,29 @@ export function Pill({ label, active, onPress, tone = 'green', round, a11yLabel 
 
 export type BtnKind = 'p' | 'd' | 's';
 export function Btn({ label, onPress, kind = 'p', disabled }: { label: string; onPress: () => void; kind?: BtnKind; disabled?: boolean }) {
-  const st = kind === 'p' ? { bg: C.green, fg: C.white, bd: C.green } : kind === 'd' ? { bg: C.white, fg: C.errInk, bd: '#E3B9B3' } : { bg: C.white, fg: C.green, bd: '#C9D8D2' };
+  const st =
+    kind === 'p'
+      ? { bg: C.green, fg: C.white, bd: C.green }
+      : kind === 'd'
+      ? { bg: '#FDF2F0', fg: C.errInk, bd: '#E7B4AB' }
+      : { bg: C.white, fg: C.green, bd: '#C9D8D2' };
   return (
     <P
       onPress={onPress}
       disabled={disabled}
       label={label}
-      style={{ borderRadius: 10, paddingVertical: 10, paddingHorizontal: 18, borderWidth: 1, borderColor: st.bd, backgroundColor: st.bg, opacity: disabled ? 0.45 : 1, minHeight: 44, justifyContent: 'center' }}>
+      style={{
+        borderRadius: 12,
+        paddingVertical: 11,
+        paddingHorizontal: 20,
+        borderWidth: 1,
+        borderColor: st.bd,
+        backgroundColor: st.bg,
+        opacity: disabled ? 0.45 : 1,
+        minHeight: 46,
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}>
       <T size={14} w={600} color={st.fg}>
         {label}
       </T>

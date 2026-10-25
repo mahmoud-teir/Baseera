@@ -248,19 +248,21 @@ function Input({ value, onChange, label, area, ltr, numeric, disabled }: { value
       multiline={area}
       accessibilityLabel={label}
       keyboardType={numeric ? 'numeric' : 'default'}
+      placeholder={label}
+      placeholderTextColor={C.faint}
       style={{
         borderWidth: 1,
-        borderColor: C.field,
-        borderRadius: 10,
-        paddingVertical: 10,
-        paddingHorizontal: 12,
+        borderColor: C.line,
+        borderRadius: 12,
+        paddingVertical: 12,
+        paddingHorizontal: 14,
         fontSize: 15,
         fontFamily: F.ui(400),
         color: C.ink,
         backgroundColor: disabled ? C.paper : C.white,
         textAlign: ltr ? 'left' : rtl ? 'right' : 'left',
         writingDirection: ltr ? 'ltr' : 'auto',
-        minHeight: area ? 84 : 44,
+        minHeight: area ? 100 : 46,
         textAlignVertical: area ? 'top' : 'center',
       }}
     />
@@ -269,7 +271,7 @@ function Input({ value, onChange, label, area, ltr, numeric, disabled }: { value
 
 function Label({ children }: { children: string }) {
   return (
-    <T size={12} color={C.sub} style={{ marginBottom: 4 }}>
+    <T size={13} w={600} color={C.greenDark} style={{ marginBottom: 6 }}>
       {children}
     </T>
   );
@@ -277,8 +279,21 @@ function Label({ children }: { children: string }) {
 
 function MiniBtn({ label, onPress, danger }: { label: string; onPress: () => void; danger?: boolean }) {
   return (
-    <P onPress={onPress} label={label} style={{ borderWidth: 1, borderColor: danger ? '#E3B9B3' : C.field, borderRadius: 8, paddingVertical: 6, paddingHorizontal: 10, minHeight: 32, justifyContent: 'center' }}>
-      <T size={12} w={500} color={danger ? C.errInk : C.green}>
+    <P
+      onPress={onPress}
+      label={label}
+      style={{
+        borderWidth: 1,
+        borderColor: danger ? '#F2C1B8' : C.line,
+        borderRadius: 8,
+        paddingVertical: 6,
+        paddingHorizontal: 12,
+        backgroundColor: danger ? '#FDF4F2' : C.white,
+        minHeight: 34,
+        justifyContent: 'center',
+        alignItems: 'center',
+      }}>
+      <T size={12} w={600} color={danger ? C.errInk : C.green}>
         {label}
       </T>
     </P>
@@ -416,34 +431,39 @@ function FieldView({ field, value, onChange, disabled }: { field: Field; value: 
         onChange(next);
       };
       return (
-        <View style={{ gap: 10 }}>
-          <Label>{field.label}</Label>
-          {rows.map((row, i) => (
-            <View key={(row.id as string) ?? i} style={{ borderWidth: 1, borderColor: C.line, borderRadius: 12, padding: 12, gap: 10, backgroundColor: C.paper }}>
-              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                <T size={12} w={600} color={C.sub}>{`${L.f.item} ${i + 1}`}</T>
-                {!disabled ? (
-                  <View style={{ flexDirection: 'row', gap: 6 }}>
-                    <MiniBtn label={L.up} onPress={() => move(i, -1)} />
-                    <MiniBtn label={L.down} onPress={() => move(i, 1)} />
-                    <MiniBtn danger label={L.remove} onPress={() => onChange(rows.filter((_, j) => j !== i))} />
-                  </View>
-                ) : null}
+        <View style={{ gap: 12 }}>
+          <Label>{`${field.label} (${rows.length})`}</Label>
+          {rows.map((row, i) => {
+            const itemTitle = (row.title as string) || (row.heading as string) || (row.q as string) || (row.surahName as string) || '';
+            return (
+              <View key={(row.id as string) ?? i} style={{ borderWidth: 1, borderColor: C.line, borderRadius: 14, padding: 14, gap: 12, backgroundColor: C.paper }}>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', gap: 6, flexWrap: 'wrap', paddingBottom: 8, borderBottomWidth: 1, borderBottomColor: C.lineSoft }}>
+                  <T size={13} w={700} color={C.greenDark}>
+                    {`${L.f.item} ${i + 1}${itemTitle ? `: ${itemTitle}` : ''}`}
+                  </T>
+                  {!disabled ? (
+                    <View style={{ flexDirection: 'row', gap: 6 }}>
+                      <MiniBtn label={L.up} onPress={() => move(i, -1)} />
+                      <MiniBtn label={L.down} onPress={() => move(i, 1)} />
+                      <MiniBtn danger label={L.remove} onPress={() => onChange(rows.filter((_, j) => j !== i))} />
+                    </View>
+                  ) : null}
+                </View>
+                {field.fields.map((sub) => (
+                  <FieldView
+                    key={sub.key}
+                    field={sub}
+                    disabled={disabled}
+                    value={sub.type === 'options' ? { options: row.options, answer: row.answer } : row[sub.key]}
+                    onChange={(v) => onChange(rows.map((r, j) => (j === i ? (sub.type === 'options' ? { ...r, ...(v as Json) } : { ...r, [sub.key]: v }) : r)))}
+                  />
+                ))}
               </View>
-              {field.fields.map((sub) => (
-                <FieldView
-                  key={sub.key}
-                  field={sub}
-                  disabled={disabled}
-                  value={sub.type === 'options' ? { options: row.options, answer: row.answer } : row[sub.key]}
-                  onChange={(v) => onChange(rows.map((r, j) => (j === i ? (sub.type === 'options' ? { ...r, ...(v as Json) } : { ...r, [sub.key]: v }) : r)))}
-                />
-              ))}
-            </View>
-          ))}
+            );
+          })}
           {!disabled ? (
             <View style={{ flexDirection: 'row' }}>
-              <MiniBtn label={`${L.add} · ${field.label}`} onPress={() => onChange([...rows, field.idPrefix ? { id: uid(field.idPrefix) } : {}])} />
+              <MiniBtn label={`+ ${L.add} · ${field.label}`} onPress={() => onChange([...rows, field.idPrefix ? { id: uid(field.idPrefix) } : {}])} />
             </View>
           ) : null}
         </View>
@@ -507,7 +527,14 @@ export function ContentEditor({ kind, slot, initial, disabled, onSaved }: { kind
   const [dirty, setDirty] = useState(false);
   const spec = specFor(kind, slot, L);
   return (
-    <View style={{ gap: 14 }}>
+    <View style={{ gap: 16 }}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 10, borderBottomWidth: 1, borderBottomColor: C.lineSoft }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: dirty ? C.gold : C.green }} />
+          <T size={13} w={600} color={C.greenDark}>{`${L.kinds[kind] ?? kind}: ${slot}`}</T>
+        </View>
+        <T size={12} color={dirty ? C.goldInk : C.sub}>{dirty ? (lang === 'ar' ? '⚠️ توجد تعديلات غير محفوظة' : L.unsaved) : (lang === 'ar' ? '✓ تم الحفظ' : L.saved)}</T>
+      </View>
       {spec.map((field) => (
         <FieldView
           key={field.key}
@@ -521,9 +548,9 @@ export function ContentEditor({ kind, slot, initial, disabled, onSaved }: { kind
         />
       ))}
       {!disabled ? (
-        <View style={{ flexDirection: 'row', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+        <View style={{ flexDirection: 'row', gap: 12, alignItems: 'center', marginTop: 10, flexWrap: 'wrap', backgroundColor: C.paper, padding: 14, borderRadius: 14, borderWidth: 1, borderColor: C.line }}>
           <Btn
-            label={L.saveDraft}
+            label={dirty ? (lang === 'ar' ? '💾 حفظ التعديلات في المسودة' : L.saveDraft) : (lang === 'ar' ? '✓ محفوظة' : L.saved)}
             disabled={busy || !dirty}
             onPress={async () => {
               const id = await saveDraft(kind, slot, clean(data) as Json);
@@ -534,8 +561,8 @@ export function ContentEditor({ kind, slot, initial, disabled, onSaved }: { kind
             }}
           />
           {dirty ? (
-            <T size={12} color={C.goldInk}>
-              {L.unsaved}
+            <T size={12} w={500} color={C.goldInk}>
+              {lang === 'ar' ? 'تذكر حفظ التعديلات لنقلها للمراجعة' : L.unsaved}
             </T>
           ) : null}
         </View>

@@ -129,6 +129,109 @@ function Stepper({ it }: { it: Item }) {
   );
 }
 
+function buildDetailFields(it: Item, L: typeof S['en']): { l: string; v: string; h: number; filled: boolean }[] {
+  const d = it.data as Record<string, unknown>;
+  if (it.kind === 'rp') {
+    return [
+      { l: L.fCat, v: it.fields.cat || it.meta, h: 20, filled: true },
+      { l: L.fPara, v: it.fields.para || it.title, h: 20, filled: true },
+      { l: L.fNote, v: it.fields.note || L.refPh, h: 60, filled: !!it.fields.note },
+    ];
+  }
+  if (it.kind === 'ev') {
+    return [
+      { l: L.fSource, v: (d.source as string) || L.srcPh, h: 20, filled: !!d.source },
+      { l: L.fRef, v: (d.ref as string) || L.refPh, h: 20, filled: !!d.ref },
+      { l: L.fText, v: (d.text as string) || L.textPh, h: 90, filled: !!d.text },
+      { l: L.f.wajh ?? 'وجه الاستدلال', v: (d.wajh as string) || '—', h: 40, filled: !!d.wajh },
+    ];
+  }
+  if (it.kind === 'ls') {
+    const objs = (d.objectives as string[]) ?? [];
+    const secs = (d.sections as { heading: string; body?: string }[]) ?? [];
+    const questions = ((d.quiz as { questions?: unknown[] })?.questions ?? []);
+    return [
+      { l: L.fObj, v: objs.join('\n') || L.pending, h: 50, filled: !!objs.length },
+      { l: L.fSections, v: secs.map((s, i) => `${i + 1}. ${s.heading}`).join('\n') || L.pending, h: 60, filled: !!secs.length },
+      { l: L.f.questions ?? 'أسئلة الاختبار', v: `${questions.length} سؤال · حد النجاح ${(d.quiz as { passPct?: number })?.passPct ?? 85}%`, h: 20, filled: !!questions.length },
+      { l: L.f.audioUrl ?? 'الملف الصوتي', v: (d.audio as string) || '—', h: 20, filled: !!d.audio },
+    ];
+  }
+  if (it.ckind === 'book') {
+    const chs = (d.chapters as { title?: string; paragraphs?: string[] }[]) ?? [];
+    const chList = chs.slice(0, 10).map((c, i) => `${i + 1}. ${c.title || 'فصل بلا عنوان'} (${c.paragraphs?.length ?? 0} فقرة)`).join('\n');
+    return [
+      { l: 'التصنيف والمجال', v: String(d.category || 'عام'), h: 20, filled: !!d.category },
+      { l: 'المؤلف / المحقق', v: String(d.author || 'غير محدد'), h: 20, filled: !!d.author },
+      { l: 'المصدر / دار النشر', v: String(d.source || '—'), h: 20, filled: !!d.source },
+      { l: 'عدد الصفحات المطبوعة', v: d.pages ? `${d.pages} صفحة` : 'غير محدد', h: 20, filled: !!d.pages },
+      { l: `فصول الكتاب (${chs.length} فصل)`, v: chList + (chs.length > 10 ? `\n... والمزيد (${chs.length - 10} فصل إضافي)` : '') || 'لا توجد فصول بعد', h: 80, filled: !!chs.length },
+    ];
+  }
+  if (it.ckind === 'audio') {
+    return [
+      { l: 'التصنيف', v: String(d.category || 'عام'), h: 20, filled: !!d.category },
+      { l: 'القارئ / المتحدث', v: String(d.author || 'غير محدد'), h: 20, filled: !!d.author },
+      { l: 'المصدر العلمي', v: String(d.source || '—'), h: 20, filled: !!d.source },
+      { l: 'حجم الملف', v: d.size_mb ? `${d.size_mb} ميغابايت` : '—', h: 20, filled: !!d.size_mb },
+      { l: 'رابط التسجيل الصوتي', v: String(d.audio_url || '—'), h: 30, filled: !!d.audio_url },
+    ];
+  }
+  if (it.ckind === 'quote') {
+    return [
+      { l: 'المجال العقدي / الفقهي', v: String(d.cat || 'العقيدة'), h: 20, filled: !!d.cat },
+      { l: 'العالم / الإمام', v: String(d.scholar || 'غير محدد'), h: 20, filled: !!d.scholar },
+      { l: 'النص الموثّق كاملاً', v: String(d.text || '—'), h: 80, filled: !!d.text },
+      { l: 'الكتاب والمرجع', v: String(d.source || '—'), h: 20, filled: !!d.source },
+    ];
+  }
+  if (it.ckind === 'vocab') {
+    const ayahs = (d.ayahs as unknown[]) ?? [];
+    const quotes = (d.quotes as unknown[]) ?? [];
+    return [
+      { l: 'الكلمة والجذر', v: `${d.word || '—'} (جذر: ${d.root || '—'}) · ${d.category || ''}`, h: 20, filled: !!d.word },
+      { l: 'المعنى القرآني الجامع', v: String(d.meaning || '—'), h: 50, filled: !!d.meaning },
+      { l: 'الآيات الشاهدة', v: `${ayahs.length} آية شاهدة موثقة بالتفسير`, h: 20, filled: !!ayahs.length },
+      { l: 'أقوال أئمة السلف الموثقة', v: `${quotes.length} قول مأثور مسند`, h: 20, filled: !!quotes.length },
+    ];
+  }
+  if (it.ckind === 'adhkar') {
+    const items = (d.items as { text?: string; count?: number; virtue?: string }[]) ?? [];
+    const summary = items.slice(0, 5).map((x, i) => `${i + 1}. ${x.text?.slice(0, 45) ?? ''} (تكرار: ${x.count ?? 1})`).join('\n');
+    return [
+      { l: `الأذكار المندرجة (${items.length} ذكر)`, v: summary + (items.length > 5 ? `\n... و ${items.length - 5} أذكار أخرى` : '') || 'لا توجد أذكار مضافة', h: 70, filled: !!items.length },
+    ];
+  }
+  if (it.ckind === 'tafsir') {
+    return [
+      { l: 'الكتاب / المفسر', v: String(d.tafsir || '—'), h: 20, filled: !!d.tafsir },
+      { l: 'المصدر والتحقيق', v: String(d.source || '—'), h: 20, filled: !!d.source },
+    ];
+  }
+  if (it.ckind === 'tajweed') {
+    const examples = (d.examples as string[]) ?? [];
+    return [
+      { l: 'الشرح والأصل', v: String(d.text || '—'), h: 60, filled: !!d.text },
+      { l: 'الأمثلة التطبيقية', v: examples.join(' · ') || '—', h: 30, filled: !!examples.length },
+      { l: 'المصدر', v: String(d.source || '—'), h: 20, filled: !!d.source },
+    ];
+  }
+  if (it.ckind === 'path') {
+    const steps = (d.steps as { title?: string; kind?: string }[]) ?? [];
+    return [
+      { l: 'المدة التقديرية', v: `${d.minutes ?? 15} دقيقة`, h: 20, filled: !!d.minutes },
+      { l: `خطوات المسار (${steps.length})`, v: steps.map((s, i) => `${i + 1}. [${s.kind ?? 'خطوة'}] ${s.title ?? ''}`).join('\n') || '—', h: 60, filled: !!steps.length },
+    ];
+  }
+  const keys = Object.keys(d);
+  return keys.slice(0, 6).map((k) => ({
+    l: k,
+    v: typeof d[k] === 'object' ? JSON.stringify(d[k]) : String(d[k] ?? '—'),
+    h: 30,
+    filled: !!d[k],
+  }));
+}
+
 /** Detail pane: header, stepper, read-only fields or the editor, approvals, actions, history. */
 function Detail({ it, editing, setEditing }: { it: Item; editing: boolean; setEditing: (v: boolean) => void }) {
   const { lang, role, curriculum, deleteContent, busy } = useAdmin();
@@ -137,25 +240,7 @@ function Detail({ it, editing, setEditing }: { it: Item; editing: boolean; setEd
   const [confirm, setConfirm] = useState(false);
   const d = it.data as Record<string, unknown>;
   const editable = it.kind !== 'rp' && can(role, 'edit');
-  const fields: { l: string; v: string; h: number; filled: boolean }[] =
-    it.kind === 'rp'
-      ? [
-          { l: L.fCat, v: it.fields.cat || it.meta, h: 20, filled: true },
-          { l: L.fPara, v: it.fields.para || it.title, h: 20, filled: true },
-          { l: L.fNote, v: it.fields.note || L.refPh, h: 60, filled: !!it.fields.note },
-        ]
-      : it.kind === 'ev'
-        ? [
-            { l: L.fSource, v: (d.source as string) || L.srcPh, h: 20, filled: !!d.source },
-            { l: L.fRef, v: (d.ref as string) || L.refPh, h: 20, filled: !!d.ref },
-            { l: L.fText, v: (d.text as string) || L.textPh, h: 90, filled: !!d.text },
-          ]
-        : it.kind === 'ls'
-          ? [
-              { l: L.fObj, v: ((d.objectives as string[]) ?? []).join('\n') || L.pending, h: 50, filled: !!(d.objectives as string[])?.length },
-              { l: L.fSections, v: ((d.sections as { heading: string }[]) ?? []).map((s) => s.heading).join('\n') || L.pending, h: 50, filled: !!(d.sections as unknown[])?.length },
-            ]
-          : [];
+  const fields = buildDetailFields(it, L);
   return (
     <View>
       <View style={{ flexDirection: 'row', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start' }}>
@@ -194,7 +279,7 @@ function Detail({ it, editing, setEditing }: { it: Item; editing: boolean; setEd
       ) : null}
       <View style={{ flexDirection: 'row', gap: 10, marginTop: 22, flexWrap: 'wrap' }}>
         {!editing ? <Actions it={it} /> : null}
-        {it.ckind && editable ? <Btn kind="s" label={editing ? L.cancel : L.edit} onPress={() => setEditing(!editing)} /> : null}
+        {it.ckind && editable ? <Btn kind={editing ? 's' : 'p'} label={editing ? (lang === 'ar' ? '✕ إلغاء التحرير' : L.cancel) : (lang === 'ar' ? '✏️ تحرير المحتوى' : L.edit)} onPress={() => setEditing(!editing)} /> : null}
         {it.ckind && (it.live ? can(role, 'roles') : editable) && !editing ? (
           <Btn
             kind="d"
@@ -310,13 +395,23 @@ function ItemRow({ i, on, onPress, check }: { i: Item; on: boolean; onPress: () 
       label={i.title}
       accessibilityState={{ selected: on }}
       hoverStyle={on ? undefined : { backgroundColor: C.sandSoft }}
-      style={{ flexDirection: 'row', gap: 12, alignItems: 'center', paddingVertical: 13, paddingHorizontal: 14, borderBottomWidth: 1, borderBottomColor: C.lineSoft, backgroundColor: on ? C.sand : C.white }}>
+      style={{
+        flexDirection: 'row',
+        gap: 12,
+        alignItems: 'center',
+        paddingVertical: 14,
+        paddingHorizontal: 16,
+        borderBottomWidth: 1,
+        borderBottomColor: C.lineSoft,
+        backgroundColor: on ? C.sand : C.white,
+        minHeight: 58,
+      }}>
       {check ? <Checkbox checked={check.checked} label={i.title} onPress={check.toggle} /> : null}
       <View style={{ flex: 1, minWidth: 0 }}>
-        <T w={500} numberOfLines={1}>
+        <T w={600} size={15} numberOfLines={1}>
           {i.title}
         </T>
-        <T size={12} color={C.sub} style={{ marginTop: 2 }} numberOfLines={1}>
+        <T size={12} color={C.sub} style={{ marginTop: 3 }} numberOfLines={1}>
           {`${kindLabel(L, i.kind, i.ckind)} · ${i.meta}`}
         </T>
       </View>

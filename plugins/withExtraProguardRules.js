@@ -13,6 +13,20 @@ const MARKER = '# baseerah: extra keep rules';
 const RULES = `
 ${MARKER}
 -keep class expo.modules.gl.** { *; }
+
+# AndroidX WorkManager & Room Database rules (prevents startup crash in WorkManagerInitializer)
+-keep class androidx.work.** { *; }
+-dontwarn androidx.work.**
+-keep class androidx.room.** { *; }
+-dontwarn androidx.room.**
+-keep class * extends androidx.room.RoomDatabase { *; }
+-keepclassmembers class * extends androidx.room.RoomDatabase {
+    <init>();
+}
+-keep class * extends androidx.work.ListenableWorker {
+    <init>(android.content.Context, androidx.work.WorkerParameters);
+}
+-keep class androidx.work.impl.** { *; }
 `;
 
 module.exports = function withExtraProguardRules(config) {

@@ -155,15 +155,20 @@ export function PagedBookReader({ item }: { item: LibraryItem }) {
 
   const currentChapter: VolumeChapter | undefined = volPayload?.chapters[activeChapterIdx];
 
-  // Search filtering in current chapter
+  // Search filtering in current chapter + Clean meta lines
   const parasWithHit = useMemo(() => {
     if (!currentChapter) return [];
     const query = q.trim().toLowerCase();
-    return currentChapter.paragraphs.map((p, i) => ({
-      text: p,
-      index: i,
-      isHit: query.length > 0 && p.toLowerCase().includes(query),
-    }));
+    return currentChapter.paragraphs
+      .filter((p) => {
+        const str = p.trim();
+        return !str.startsWith('META#') && !str.startsWith('#META') && !str.startsWith('#####OpenITI#');
+      })
+      .map((p, i) => ({
+        text: p,
+        index: i,
+        isHit: query.length > 0 && p.toLowerCase().includes(query),
+      }));
   }, [currentChapter, q]);
 
   const totalHits = useMemo(() => parasWithHit.filter((p) => p.isHit).length, [parasWithHit]);

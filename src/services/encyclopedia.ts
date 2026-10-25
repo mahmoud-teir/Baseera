@@ -53,7 +53,7 @@ export async function getEncyclopediaIndex(customUrl?: string): Promise<Encyclop
   if (cachedIndex) return cachedIndex;
 
   const url = customUrl || `${DEFAULT_BASE_URL}/index.json`;
-  const cacheFile = new File(Paths.cache, 'bidayah_index_v1.json');
+  const cacheFile = new File(Paths.cache, 'bidayah_index_v2.json');
 
   // Try local cache first
   try {
@@ -93,7 +93,7 @@ export async function getVolumeChunk(vol: number, baseUrl?: string): Promise<Vol
   }
 
   const volStr = String(vol).padStart(2, '0');
-  const cacheFile = new File(Paths.cache, `bidayah_vol_${volStr}.json`);
+  const cacheFile = new File(Paths.cache, `bidayah_vol_v2_${volStr}.json`);
 
   // Try local file cache
   try {
